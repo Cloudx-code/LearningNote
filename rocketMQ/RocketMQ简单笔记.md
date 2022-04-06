@@ -6,14 +6,14 @@
 
 MQ可以将系统的超量请求暂存其中，以便系统后期可以慢慢进行处理，从而避免了请求的丢失或系统被压垮。
 
-<img src="\RocketMQ简单笔记.assets\image-20220317134534348.png" alt="image-20220317134534348" style="zoom: 33%;" />
+<img src="RocketMQ简单笔记.assets\image-20220317134534348.png" alt="image-20220317134534348" style="zoom: 33%;" />
 
 ### 2.异步解耦
 
 上游系统对下游系统的调用若为同步调用，则会大大降低系统的吞吐量与并发度，且系统耦合度太高。
 而异步调用则会解决这些问题。所以两层之间若要实现由同步到异步的转化，一般性做法就是，在这两层间添加一个MQ层。
 
-<img src="\RocketMQ简单笔记.assets\image-20220317141324597.png" alt="image-20220317141324597" style="zoom:33%;" />
+<img src="RocketMQ简单笔记.assets\image-20220317141324597.png" alt="image-20220317141324597" style="zoom:33%;" />
 
 ### 3.数据收集
 
@@ -33,7 +33,7 @@ MQ可以将系统的超量请求暂存其中，以便系统后期可以慢慢进
 
 ### 主题(Topic)
 
-<img src="\RocketMQ简单笔记.assets\image-20220319203245663.png" alt="image-20220319203245663" style="zoom: 33%;" />
+<img src="RocketMQ简单笔记.assets\image-20220319203245663.png" alt="image-20220319203245663" style="zoom: 33%;" />
 
 Topic表示一类消息的集合（比如上图中狗吃的骨头可以有很多个。）
 
@@ -259,7 +259,7 @@ $\textcolor{red}{Index Service}$：索引服务。根据特定的Message key，�
 
 #### 集群部署
 
-![image-20220402213357108](\RocketMQ简单笔记.assets\image-20220402213357108.png)
+![image-20220402213357108](RocketMQ简单笔记.assets\image-20220402213357108.png)
 
 
 
