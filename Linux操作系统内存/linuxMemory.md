@@ -32,7 +32,7 @@ Linux 内存是后台开发人员，需要深入了解的计算机资源。合�
 
 2)内存的特点是存取速率快
 
-<img src="F:\GoProject\learningNote\Linux操作系统内存\linuxMemory.assets\image-20220319010234097.png" alt="image-20220319010234097" style="zoom: 80%;" />
+<img src="linuxMemory.assets\image-20220319010234097.png" alt="image-20220319010234097" style="zoom: 80%;" />
 
 ## 2、内存的作用
 
@@ -42,13 +42,13 @@ Linux 内存是后台开发人员，需要深入了解的计算机资源。合�
 
 3)保障 cpu 计算的稳定性和高性能
 
-<img src="F:\GoProject\learningNote\Linux操作系统内存\linuxMemory.assets\image-20220319010524680.png" alt="image-20220319010524680" style="zoom:50%;" />
+<img src="linuxMemory.assets\image-20220319010524680.png" alt="image-20220319010524680" style="zoom:50%;" />
 
 # 二、Linux内存地址空间
 
 ## 1、Linux 内存地址空间 Linux 内存管理全貌
 
-<img src="F:\GoProject\learningNote\Linux操作系统内存\linuxMemory.assets\image-20220319011801675.png" alt="image-20220319011801675" style="zoom:150%;" />
+<img src="linuxMemory.assets\image-20220319011801675.png" alt="image-20220319011801675" style="zoom:150%;" />
 
 ## 2、内存地址——用户态&内核态
 
@@ -62,7 +62,7 @@ Linux 内存是后台开发人员，需要深入了解的计算机资源。合�
 
 区别：每个进程都有完全属于自己的，独立的，不被干扰的内存空间；**用户态的程序就不能随意操作内核地址空间，具有一定的安全保护作用；内核态线程共享内核地址空间；**
 
-![image-20220319011626266](F:\GoProject\learningNote\Linux操作系统内存\linuxMemory.assets\image-20220319011626266.png)
+![image-20220319011626266](linuxMemory.assets\image-20220319011626266.png)
 
 ## 3、内存地址——MMU 地址转换
 
@@ -76,7 +76,7 @@ MMU 是一种硬件电路，它包含两个部件，一个是分段部件，一�
 
 分页机制把一个线性地址转换为物理地址
 
-![image-20220319012149511](F:\GoProject\learningNote\Linux操作系统内存\linuxMemory.assets\image-20220319012149511.png)
+![image-20220319012149511](linuxMemory.assets\image-20220319012149511.png)
 
 ## 4、内存地址——分段机制（没太懂啊，咋转换的没说太深）
 

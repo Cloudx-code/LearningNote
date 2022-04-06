@@ -94,7 +94,7 @@ producerIp + 进程pid + MessageClientIDSetter类的ClassLoader的hashCode + 当
 
 ## 2.系统架构
 
-![image-20220326165920938](RocketMQ简单笔记.assets\image-20220326165920938.png)
+<img src="RocketMQ简单笔记.assets\image-20220326165920938.png" alt="image-20220319204801922" style="zoom: 67%;" />
 
 简单来说，就是分了这四块集群，然后后面来总结下每一块的功能是什么。
 
@@ -259,7 +259,7 @@ $\textcolor{red}{Index Service}$：索引服务。根据特定的Message key，�
 
 #### 集群部署
 
-![image-20220402213357108](RocketMQ简单笔记.assets\image-20220402213357108.png)
+<img src="RocketMQ简单笔记.assets\image-20220402213357108.png" alt="image-20220402212829820" style="zoom: 100%;" />
 
 
 
@@ -564,7 +564,7 @@ commitlog目录中存放着很多的mappedFile文件，当前Broker中的所有�
 
 #### 消息单元
 
-![image-20220407002819965](RocketMQ简单笔记.assets\image-20220407002819965.png)
+<img src="RocketMQ简单笔记.assets\image-20220407002819965.png" alt="image-20220406214626834" style="zoom: 80%;" />
 
 mappedFile文件内容由一个个的消息单元构成。每个消息单元中包含消息总长度MsgLen、消息的物理位置physicalOffset、消息体内容Body、消息体长度BodyLength、消息主题Topic、Topic长度TopicLength、消息生产者BornHost、消息发送时间戳BornTimestamp、消息所在的队列QueueId、消息在Queue中存储的偏移量QueueOffset等近20余项消息相关属性。
 
