@@ -6,14 +6,14 @@
 
 MQ可以将系统的超量请求暂存其中，以便系统后期可以慢慢进行处理，从而避免了请求的丢失或系统被压垮。
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220317134534348.png" alt="image-20220317134534348" style="zoom: 33%;" />
+<img src="\RocketMQ简单笔记.assets\image-20220317134534348.png" alt="image-20220317134534348" style="zoom: 33%;" />
 
 ### 2.异步解耦
 
 上游系统对下游系统的调用若为同步调用，则会大大降低系统的吞吐量与并发度，且系统耦合度太高。
 而异步调用则会解决这些问题。所以两层之间若要实现由同步到异步的转化，一般性做法就是，在这两层间添加一个MQ层。
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220317141324597.png" alt="image-20220317141324597" style="zoom:33%;" />
+<img src="\RocketMQ简单笔记.assets\image-20220317141324597.png" alt="image-20220317141324597" style="zoom:33%;" />
 
 ### 3.数据收集
 
@@ -33,7 +33,7 @@ MQ可以将系统的超量请求暂存其中，以便系统后期可以慢慢进
 
 ### 主题(Topic)
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220319203245663.png" alt="image-20220319203245663" style="zoom: 33%;" />
+<img src="\RocketMQ简单笔记.assets\image-20220319203245663.png" alt="image-20220319203245663" style="zoom: 33%;" />
 
 Topic表示一类消息的集合（比如上图中狗吃的骨头可以有很多个。）
 
@@ -69,11 +69,11 @@ Topic的消息。 producer:topic 1:n （我给家里不同的动物投的食物�
 
 一个Queue中的消息**不允许**同一个**消费者组**中的多个消费者同时消费。言外之意就是**允许**不同**消费者组**的一起消费。比如下图的那个老人左边要是再来一群狗，就可以和右边的三只狗一起吃。
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220319204524128.png" alt="image-20220319204524128" style="zoom:33%;" />
+<img src="RocketMQ简单笔记.assets\image-20220319204524128.png" alt="image-20220319204524128" style="zoom:33%;" />
 
 在学习参考其它相关资料时，还会看到一个概念：分片（Sharding）。分片不同于分区。在RocketMQ中，分片指的是存放相应Topic的Broker。每个分片中会创建出相应数量的分区，即Queue，每个Queue的大小都是相同的。
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220319204801922.png" alt="image-20220319204801922" style="zoom:33%;" />
+<img src="RocketMQ简单笔记.assets\image-20220319204801922.png" alt="image-20220319204801922" style="zoom:33%;" />
 
 ### 消息标识(MessageId/Key)
 
@@ -94,7 +94,7 @@ producerIp + 进程pid + MessageClientIDSetter类的ClassLoader的hashCode + 当
 
 ## 2.系统架构
 
-![image-20220326165920938](F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220326165920938.png)
+![image-20220326165920938](RocketMQ简单笔记.assets\image-20220326165920938.png)
 
 简单来说，就是分了这四块集群，然后后面来总结下每一块的功能是什么。
 
@@ -127,19 +127,17 @@ RocketMQ中的消息消费者都是以消费者组（Consumer Group）的形式�
 
 （1）消费者组中Consumer的数量应该小于等于订阅Topic的Queue数量。如果超出Queue数量，则多出的Consumer将不能消费消息。（比如下面这个图，Consumer3不能消费任何信息）
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220326171541482.png" alt="image-20220326171541482" style="zoom: 67%;" />
+<img src="RocketMQ简单笔记.assets\image-20220326171541482.png" alt="image-20220326171541482" style="zoom: 67%;" />
 
 （2）不过，一个Topic类型的消息可以被多个消费者组同时消费。
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220326171819413.png" alt="image-20220326171819413" style="zoom:67%;" />
+<img src="RocketMQ简单笔记.assets\image-20220326171819413.png" alt="image-20220326171819413" style="zoom:67%;" />
 
 > 注意，
 > 1）消费者组只能消费一个Topic的消息，不能同时消费多个Topic消息
 > 2）一个消费者组中的消费者必须订阅完全相同的Topic
 
 ### NameServer
-
-
 
 #### 大致功能
 
@@ -249,7 +247,7 @@ Broker充当着消息中转角色，负责存储消息、转发消息。Broker�
 
 下图为Broker Server的功能模块示意图。（列出了较为重要的组件）
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220402212829820.png" alt="image-20220402212829820" style="zoom: 67%;" />
+<img src="RocketMQ简单笔记.assets\image-20220402212829820.png" alt="image-20220402212829820" style="zoom: 67%;" />
 
 $\textcolor{red}{Remoting Module}$：整个Broker的实体，负责处理来自clients端的请求。而这个Broker实体则由以下模块构成。
 
@@ -261,7 +259,7 @@ $\textcolor{red}{Index Service}$：索引服务。根据特定的Message key，�
 
 #### 集群部署
 
-![image-20220402213357108](F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220402213357108.png)
+![image-20220402213357108](\RocketMQ简单笔记.assets\image-20220402213357108.png)
 
 
 
@@ -276,7 +274,7 @@ Master与Slave 的对应关系是通过指定相同的BrokerName、不同的Brok
 
 #### 具体流程
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220403004418605.png" alt="image-20220403004418605" style="zoom:50%;" />
+<img src="RocketMQ简单笔记.assets\image-20220403004418605.png" alt="image-20220403004418605" style="zoom:50%;" />
 
 1）启动NameServer，NameServer启动后开始监听端口，等待Broker、Producer、Consumer连接。
 
@@ -315,7 +313,7 @@ perm用于设置对当前创建Topic的操作权限：2表示只写，4表示只
 
 ## 3.单机安装与启动
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220404225337587.png" alt="image-20220404225337587" style="zoom: 50%;" />
+<img src="RocketMQ简单笔记.assets\image-20220404225337587.png" alt="image-20220404225337587" style="zoom: 50%;" />
 
 1.前提条件：好像只用JDK就行了，感觉Maven也要。然后直接安装了解压。
 
@@ -329,11 +327,11 @@ perm用于设置对当前创建Topic的操作权限：2表示只写，4表示只
 
 ## 5.集群搭建理论
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220405145247023.png" alt="image-20220405145247023" style="zoom:50%;" />
+<img src="RocketMQ简单笔记.assets\image-20220405145247023.png" alt="image-20220405145247023" style="zoom:50%;" />
 
 ###  数据复制与刷盘策略
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220405145324670.png" alt="image-20220405145324670" style="zoom:50%;" />
+<img src="RocketMQ简单笔记.assets\image-20220405145324670.png" alt="image-20220405145324670" style="zoom:50%;" />
 
 **复制策略**
 复制策略是Broker的Master与Slave间的数据同步方式。分为同步复制与异步复制：
@@ -507,7 +505,7 @@ $\textcolor{RoyalBlue}{这里主要搞清楚路由表和Broker列表的结构}$
 >
 > 不对。**一套brokerName名称相同的Master-Slave小集群对应一个BrokerData**。BrokerData中包含brokerName及一个map。该map的key为brokerId，value为该broker对应的地址。brokerId为0表示该broker为Master，非0表示Slave。
 >
-> <img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220406154601879.png" alt="image-20220406154601879" style="zoom: 50%;" />
+> <img src="RocketMQ简单笔记.assets\image-20220406154601879.png" alt="image-20220406154601879" style="zoom: 50%;" />
 >
 > $\textcolor{RoyalBlue}{(Broker的示意图)}$
 
@@ -535,7 +533,7 @@ RocketMQ中的消息存储在本地文件系统中，这些相关文件默认在
 
 $\textcolor{RoyalBlue}{(这应该是一个Broker的目录，一个!!!)}$
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220406214626834.png" alt="image-20220406214626834" style="zoom:50%;" />
+<img src="RocketMQ简单笔记.assets\image-20220406214626834.png" alt="image-20220406214626834" style="zoom:50%;" />
 
 >`abort`：该文件在Broker启动后会自动创建，正常关闭Broker，该文件会自动消失。若在没有启动Broker的情况下，发现这个文件是存在的，则说明之前Broker的关闭是非正常关闭。
 >`checkpoint`：其中存储着commitlog、consumequeue、index文件的最后刷盘时间戳
@@ -566,7 +564,7 @@ commitlog目录中存放着很多的mappedFile文件，当前Broker中的所有�
 
 #### 消息单元
 
-![image-20220407002819965](F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220407002819965.png)
+![image-20220407002819965](RocketMQ简单笔记.assets\image-20220407002819965.png)
 
 mappedFile文件内容由一个个的消息单元构成。每个消息单元中包含消息总长度MsgLen、消息的物理位置physicalOffset、消息体内容Body、消息体长度BodyLength、消息主题Topic、Topic长度TopicLength、消息生产者BornHost、消息发送时间戳BornTimestamp、消息所在的队列QueueId、消息在Queue中存储的偏移量QueueOffset等近20余项消息相关属性。
 
@@ -576,11 +574,11 @@ mappedFile文件内容由一个个的消息单元构成。每个消息单元中�
 
 ### consumequeue
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220407002950097.png" alt="image-20220407002950097" style="zoom:50%;" />
+<img src="RocketMQ简单笔记.assets\image-20220407002950097.png" alt="image-20220407002950097" style="zoom:50%;" />
 
 #### 目录与文件
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220407003119399.png" alt="image-20220407003119399" style="zoom:67%;" />
+<img src="RocketMQ简单笔记.assets\image-20220407003119399.png" alt="image-20220407003119399" style="zoom:67%;" />
 
 为了提高效率，会为每个Topic在~/store/consumequeue中创建一个目录，目录名为Topic名称。在该Topic目录下，会再为每个该Topic的Queue建立一个目录，目录名为queueId。每个目录中存放着若干consumequeue文件，consumequeue文件是commitlog的索引文件，可以根据consumequeue定位到具体的消息。$\textcolor{RoyalBlue}{(大概的层级结构：topic/queue/file)}$
 
@@ -588,7 +586,7 @@ mappedFile文件内容由一个个的消息单元构成。每个消息单元中�
 
 #### 索引条目
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220407003256413.png" alt="image-20220407003256413" style="zoom: 67%;" />
+<img src="RocketMQ简单笔记.assets\image-20220407003256413.png" alt="image-20220407003256413" style="zoom: 67%;" />
 
 每个consumequeue文件可以包含**30w**个索引条目，每个索引条目包含了三个消息重要属性：消息在mappedFile文件中的**偏移量CommitLog Offset**、**消息长度**、**消息Tag的hashcode值**。这三个属性占**20个字节**，所以每个文件的大小是固定的**30w * 20字节。**
 
@@ -596,7 +594,7 @@ mappedFile文件内容由一个个的消息单元构成。每个消息单元中�
 
 ### 对文件的读写
 
-<img src="F:\GoProject\learningNote\rocketMQ\RocketMQ简单笔记.assets\image-20220407003515950.png" alt="image-20220407003515950" style="zoom:67%;" />
+<img src="RocketMQ简单笔记.assets\image-20220407003515950.png" alt="image-20220407003515950" style="zoom:67%;" />
 
 #### 消息写入
 
