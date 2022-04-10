@@ -210,7 +210,9 @@ RocketMQ的路由发现采用的是Pull模型。当Topic路由信息出现变化
 
 最新的路由。默认客户端每30秒会拉取一次最新的路由。
 
->扩展：
+<a name="pullModel"> </a>
+
+>扩展：**第三大章消息的消费：获取消费类型有详细展开**
 >1）Push模型：推送模型。其实时性较好，是一个“发布-订阅”模型，需要维护一个长连接。而长连接的维护是需要资源成本的。该模型适合于的场景：实时性要求较高，Client数量不多，Server数据变化较频繁
 >
 >2）Pull模型：拉取模型。存在的问题是，实时性较差。
@@ -543,7 +545,7 @@ $\textcolor{RoyalBlue}{(这应该是一个Broker的目录，一个!!!)}$
 >`index`：其中存放着消息索引文件indexFile
 >`lock`：运行期间使用到的全局资源锁
 
-### **commitlog文件**
+### **commitlog文件（存消息）**
 
 又称为mappedFile
 
@@ -572,7 +574,7 @@ mappedFile文件内容由一个个的消息单元构成。每个消息单元中�
 >
 > L(m+1) = L(m) + MsgLen(m) (m >= 0)
 
-### consumequeue
+### consumequeue（存索引）
 
 <img src="RocketMQ简单笔记.assets\image-20220407002950097.png" alt="image-20220407002950097" style="zoom:50%;" />
 
@@ -636,3 +638,138 @@ mappedFile文件内容由一个个的消息单元构成。每个消息单元中�
 6. 从对应commitlog offset中读取消息单元，并发送给Consumer
 
 #### 性能提升
+
+RocketMQ中，无论是消息本身还是消息索引，都是存储在磁盘上的。其不会影响消息的消费吗？
+
+当然不会。其实RocketMQ的性能在目前的MQ产品中性能是非常高的。因为系统通过一系列相关机制大大提升了性能。
+
+首先，RocketMQ对文件的读写操作是通过**mmap零拷贝**进行的，将对文件的操作转化为直接对内存地址进行操作，从而极大地提高了文件的读写效率。
+
+其次，consumequeue中的数据是顺序存放的，还引入了**PageCache**的预读取机制，使得对consumequeue文件的读取几乎接近于内存读取，即使在有消息堆积情况下也不会影响性能。
+
+> PageCache机制，页缓存机制，是OS对文件的缓存机制，用于加速对文件的读写操作。一般来说，程序对文件进行**顺序读写**的速度几乎接近于内存读写速度，主要原因是由于OS使用PageCache机制对读写访问操作进行性能优化，将一部分的内存用作PageCache。
+>
+> 写操作：OS会先将数据写入到PageCache中，随后会以异步方式由pdflush（page dirty flush)内核线程将Cache中的数据刷盘到物理磁盘
+> 读操作：若用户要读取数据，其首先会从PageCache中读取，若没有命中，则OS在从物理磁盘上加载该数据到PageCache的同时，也会顺序对其相邻数据块中的数据进行预读取。
+
+#### 与Kafka对比
+
+RocketMQ中的commitlog目录与consumequeue的结合就类似于Kafka中的partition分区目录。
+mappedFile文件就类似于Kafka中的segment段。
+
+$\textcolor{RoyalBlue}{(以后学到kafka再看0.0)}$
+
+## 3.indexFile（通过Key找消息）
+
+$\textcolor{RoyalBlue}{(这玩意要时刻关注key)}$
+
+除了通过通常的指定Topic进行消息消费外，RocketMQ还提供了根据**key**进行消息查询的功能$\textcolor{RoyalBlue}{(这个好像是RocketMQ独有的)}$。
+
+该查询是通过store目录中的index子目录中的indexFile进行索引实现的快速查询。当然，这个indexFile中的索引数据是在包含了key的消息被发送到Broker时写入的。如果消息中没有包含key，则不会写入。
+
+####  索引条目结构
+
+每个Broker中会包含一组indexFile，每个indexFile都是以一个时间戳命名的（这个indexFile被创建时的时间戳）。
+
+每个indexFile文件由三部分构成：$\textcolor{Red}{indexHeader，slots槽位，indexes索引数据。}$
+
+<img src="RocketMQ简单笔记.assets/image-20220407174135865.png" alt="image-20220407174135865" style="zoom:67%;" />
+
+每个indexFile文件中包含**500w个slot槽**。而每个slot槽又可能会挂载很多的index索引单元。
+
+$\textcolor{Red}{indexHeader}$固定40个字节，其中存放着如下数据：
+
+<img src="RocketMQ简单笔记.assets/image-20220407174313020.png" alt="image-20220407174313020" style="zoom:67%;" />
+
+> beginTimestamp：该indexFile中第一条消息的存储时间
+> endTimestamp：该indexFile中最后一条消息存储时间
+> beginPhyoffset：该indexFile中第一条消息在commitlog中的偏移量commitlog offset
+> endPhyoffset：该indexFile中最后一条消息在commitlog中的偏移量commitlog offset
+> hashSlotCount：已经填充有index的slot数量（并不是每个slot槽下都挂载有index索引单元，这里统计的是所有挂载了index索引单元的slot槽的数量）
+> indexCount：该indexFile中包含的索引单元个数（统计出当前indexFile中所有slot槽下挂载的所有index索引单元的数量之和）
+
+$\textcolor{RoyalBlue}{(这一节围绕indexHeader,slot和indexes理解，目前indexHeader的结构差不多了)}$
+
+indexFile中最复杂的是$\textcolor{Red}{Slots}$与$\textcolor{Red}{Indexes}$间的关系。在实际存储时，Indexes是在Slots后面的，但为了便于理解，将它们的关系展示为如下形式：
+
+<img src="RocketMQ简单笔记.assets/image-20220407192823787.png" alt="image-20220407192823787" style="zoom:67%;" />
+
+**key的hash值 % 500w** 的结果即为slot槽位，然后将该slot值修改为该index索引单元的indexNo，根据这个indexNo可以计算出该index单元在indexFile中的位置。$\textcolor{RoyalBlue}{(相对于找slot的时候直接找的就是indexNo,然后通过indexNo直接找到对应的那个index)}$
+
+不过，该取模结果的重复率是很高的，为了解决该问题，在每个index索引单元中增加了preIndexNo，用于指定该slot中当前index索引单元的前一个index索引单元。而slot中始终存放的是其下最新的index索引单元的indexNo，这样的话，只要找到了slot就可以找到其最新的index索引单元，而通过这个index索引单元就可以找到其之前的所有index索引单元。
+
+> indexNo是一个在indexFile中的流水号，从0开始依次递增。即在一个indexFile中所有indexNo是以此递增的。indexNo在index索引单元中是没有体现的，其是通过indexes中依次数出来的。
+
+$\textcolor{Red}{Indexes}$索引单元默写20个字节，其中存放着以下四个属性：
+
+<img src="RocketMQ简单笔记.assets/image-20220408023831318.png" alt="image-20220408023831318" style="zoom:50%;" />
+
+> keyHash：消息中指定的业务key的hash值
+> phyOffset：当前key对应的消息在commitlog中的偏移量commitlog offset
+> timeDiff：当前key对应消息的存储时间与当前indexFile创建时间的时间差
+> preIndexNo：当前slot下当前index索引单元的前一个index索引单元的indexNo
+
+#### indexFile的创建
+
+indexFile的文件名为当前文件被创建时的时间戳。这个时间戳有什么用处呢？
+
+根据业务key进行查询时，查询条件除了key之外，还需要指定一个要查询的时间戳，表示要查询不大于该时间戳的最新的消息，即查询指定时间戳之前存储的最新消息。这个时间戳文件名可以简化查询，提高查询效率。具体后面会详细讲解。
+
+$\textcolor{RoyalBlue}{(好像有点Mysql的快照隔离思想?)}$
+
+indexFile文件是何时创建的？其创建的条件（时机）有两个：
+
+1. 当第一条带key的消息发送来后，系统发现没有indexFile，此时会创建第一个indexFile文件
+2. 当一个indexFile中挂载的index索引单元数量超出2000w个时，会创建新的indexFile。当带key的消息发送到来后，系统会找到最新的indexFile，并从其indexHeader的最后4字节中读取到indexCount。若indexCount >= 2000w时，会创建新的indexFile。
+
+> 由于可以推算出，一个indexFile的最大大小是：(40 + 500w * 4 + 2000w * 20)字节
+
+#### 查询流程
+
+当消费者通过**业务key**来查询相应的消息时，其需要经过一个相对较复杂的查询流程。不过，在分析查询流程之前，首先要清楚几个定位计算式子：
+
+> 1. 计算指定消息key的slot槽位序号：$\textcolor{RoyalBlue}{(先算slot槽号)}$
+>    slot槽位序号n = key的hash % 500w
+> 2. 计算槽位序号为n的slot在indexFile中的起始位置：$\textcolor{RoyalBlue}{(通过slot槽号算出slot在indexFile这个文件里的位置)}$
+>    slot(n)位置 = 40 + (n - 1) * 4
+> 3. 计算indexNo为m的index在indexFile中的位置：$\textcolor{RoyalBlue}{(得到slot的位置以后，就可以得到对应的indexNo，从而得到对应index在indexFile里的位置)}$
+>    index(m)位置 = 40 + 500w * 4 + (m - 1) * 20
+>
+> 注：40为indexFile中indexHeader的字节数，500w * 4 是所有slots所占的字节数
+
+具体查询流程如下：
+
+![image-20220408024930230](RocketMQ简单笔记.assets/image-20220408024930230.png)
+
+
+
+## 4.消息的消费
+
+消费者从Broker中获取消息的方式有两种：pull拉取方式和push推动方式。消费者组对于消息消费的模式又分为两种：集群消费Clustering和广播消费Broadcasting。
+
+### 获取消息消费类型
+
+[第二大章系统架构的路由发现里面提过类似的知识](#pullModel)
+
+#### 拉取式消费(pull)
+
+Consumer主动从Broker中拉取消息，主动权由Consumer控制。一旦获取了批量消息，就会启动消费过程。不过，该方式的实时性较弱，即Broker中有了新的消息时消费者并不能及时发现并消费。
+
+> 由于拉取时间间隔是由用户指定的，所以在设置该间隔时需要注意平稳：间隔太短，空请求比例会增加；间隔太长，消息的实时性太差
+>
+> 
+
+#### 推送式消费(push)
+
+#### 对比
+
+### 消费模式
+
+### Rebalance机制
+
+### Queue分配算法
+
+### 至少一次原则
+
+
+
