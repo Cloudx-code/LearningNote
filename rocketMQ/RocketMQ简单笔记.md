@@ -1,6 +1,6 @@
-#  一、概述：
+#  第一章、概述：
 
-## 1.主要用途：
+## 一.主要用途：
 
 ### 1.限流削峰
 
@@ -19,19 +19,19 @@ MQ可以将系统的超量请求暂存其中，以便系统后期可以慢慢进
 
 分布式系统会产生海量级数据流，如：业务日志、监控数据、用户行为等。针对这些数据流进行实时或批量采集汇总，然后对这些数据流进行大数据分析，这是当前互联网平台的必备技术。通过MQ完成此类数据收集是最好的选择。
 
-## 2.其他内容
+## 二.其他内容
 
 大致讲了一些其他MQ产品，以后可能还要关注下Kafka,介绍了一些MQ常用协议，不过RocketMQ和Kafka好像都不遵循这些协议。
 
-# 二、RocketMQ各种细节
+# 第二章、RocketMQ各种细节
 
-## 1.涉及的基本概念
+## 一.涉及的基本概念
 
-### 消息（Message）
+### 1.消息（Message）
 
 消息是指，消息系统所传输信息的物理载体，生产和消费数据的最小单位，每条消息必须属于一个主题。
 
-### 主题(Topic)
+### 2.主题(Topic)
 
 <img src="RocketMQ简单笔记.assets\image-20220319203245663.png" alt="image-20220319203245663" style="zoom: 33%;" />
 
@@ -47,7 +47,7 @@ Topic的消息。 producer:topic 1:n （我给家里不同的动物投的食物�
 
 （理解起来有点怪啊，举个例子：我可以给家里的狗为骨头，鱼喂鱼粮，但是狗不能吃鱼粮这种...此处例子怪是因为老师讲的不行，跟我没关系）；
 
-### 标签(Tag)
+### 3.标签(Tag)
 
 为消息设置的标签，用于同一主题下区分不同类型的消息。
 
@@ -59,7 +59,7 @@ Topic的消息。 producer:topic 1:n （我给家里不同的动物投的食物�
 
 **Topic是消息的一级分类，Tag是消息的二级分类。**（这个总结还蛮好的，脑海里想了一下狗子吃的不同狗粮品牌。）
 
-### 队列(Queue)
+### 4.队列(Queue)
 
 存储消息的物理实体。一个Topic中可以包含多个Queue，每个Queue中存放的就是该Topic的消息。
 
@@ -75,7 +75,7 @@ Topic的消息。 producer:topic 1:n （我给家里不同的动物投的食物�
 
 <img src="RocketMQ简单笔记.assets\image-20220319204801922.png" alt="image-20220319204801922" style="zoom:33%;" />
 
-### 消息标识(MessageId/Key)
+### 5.消息标识(MessageId/Key)
 
 RocketMQ中每个消息拥有唯一的MessageId，且可以携带具有业务标识的Key，以方便对消息的查询。
 不过需要注意的是，MessageId有两个：在生产者send()消息时会自动生成一个MessageId（msgId)，
@@ -92,13 +92,13 @@ producerIp + 进程pid + MessageClientIDSetter类的ClassLoader的hashCode + 当
 
 **key**：由用户指定的业务相关的唯一标识
 
-## 2.系统架构
+## 二.系统架构
 
 <img src="RocketMQ简单笔记.assets\image-20220326165920938.png" alt="image-20220319204801922" style="zoom: 67%;" />
 
 简单来说，就是分了这四块集群，然后后面来总结下每一块的功能是什么。
 
-### Producer 
+### 1.Producer
 
 消息生产者，负责生产消息。Producer通过MQ的负载均衡模块选择相应的Broker集群队列进行消息投递，投递的过程支持快速失败并且低延迟。
 
@@ -108,7 +108,7 @@ producerIp + 进程pid + MessageClientIDSetter类的ClassLoader的hashCode + 当
 
 RocketMQ中的消息生产者都是以生产者组（Producer Group）的形式出现的。生产者组是同一类生产者的集合，这类Producer发送相同Topic类型的消息。一个生产者组可以同时发送多个主题的消息。（因为一个生成者可以关联多个Topic）
 
-### Consumer
+### 2.Consumer
 
 消息消费者，负责消费消息。一个消息消费者会从Broker服务器中获取到消息，并对消息进行相关业务处理。(Broker后面再看)
 
@@ -125,7 +125,7 @@ RocketMQ中的消息消费者都是以消费者组（Consumer Group）的形式�
 
 两个不太重要的小细节：
 
-（1）消费者组中Consumer的数量应该小于等于订阅Topic的Queue数量。如果超出Queue数量，则多出的Consumer将不能消费消息。（比如下面这个图，Consumer3不能消费任何信息）
+（1）消费者组中Consumer的数量应该小于等于订阅Topic的Queue数量。如果超出Queue数量，则多出的Consumer将不能消费消息。（比如下面这个图，Consumer3不能消费任何信息）[后面会说](#consumerNum2)<a name="consumerNum1"> </a>
 
 <img src="RocketMQ简单笔记.assets\image-20220326171541482.png" alt="image-20220326171541482" style="zoom: 67%;" />
 
@@ -137,7 +137,7 @@ RocketMQ中的消息消费者都是以消费者组（Consumer Group）的形式�
 > 1）消费者组只能消费一个Topic的消息，不能同时消费多个Topic消息
 > 2）一个消费者组中的消费者必须订阅完全相同的Topic
 
-### NameServer
+### 3.NameServer
 
 #### 大致功能
 
@@ -210,9 +210,9 @@ RocketMQ的路由发现采用的是Pull模型。当Topic路由信息出现变化
 
 最新的路由。默认客户端每30秒会拉取一次最新的路由。
 
-<a name="pullModel"> </a>
+<a name="pullModel1"> </a>
 
->扩展：**第三大章消息的消费：获取消费类型有详细展开**
+>扩展：[第三大章消息的消费：获取消费类型有详细展开](#pullModel2)
 >1）Push模型：推送模型。其实时性较好，是一个“发布-订阅”模型，需要维护一个长连接。而长连接的维护是需要资源成本的。该模型适合于的场景：实时性要求较高，Client数量不多，Server数据变化较频繁
 >
 >2）Pull模型：拉取模型。存在的问题是，实时性较差。
@@ -237,7 +237,7 @@ $\textcolor{RoyalBlue}{关于NameServer设计层面的额外补充}$
 
 > 在降低NameServer实现复杂性方面，还有一个设计亮点就是NameServer之间是彼此独立无交流的，也就是说NameServer服务器之间在某个时刻的数据并不会完全相同，但是异常重试机制使得这种差异不会造成任何影响。
 
-### Broker
+### 4.Broker
 
 #### 功能介绍
 
@@ -272,7 +272,7 @@ $\textcolor{red}{Index Service}$：索引服务。根据特定的Message key，�
 Broker节点集群是一个主从集群，即集群中具有Master与Slave两种角色。Master负责处理读写操作请求，Slave负责对Master中的数据进行备份。当Master挂掉了，Slave则会自动切换为Master去工作。所以这个Broker集群是**主备集群**（不是主从集群）。一个Master可以包含多个Slave，但一个Slave只能隶属于一个Master。
 Master与Slave 的对应关系是通过指定相同的BrokerName、不同的BrokerId 来确定的。BrokerId为0表示Master，非0表示Slave。每个Broker与NameServer集群中的所有节点建立长连接，定时注册Topic信息到所有NameServer。
 
-### 工作流程
+### 5.工作流程
 
 #### 具体流程
 
@@ -313,7 +313,7 @@ Master与Slave 的对应关系是通过指定相同的BrokerName、不同的Brok
 
 perm用于设置对当前创建Topic的操作权限：2表示只写，4表示只读，6表示读写。
 
-## 3.单机安装与启动
+## 三.单机安装与启动
 
 <img src="RocketMQ简单笔记.assets\image-20220404225337587.png" alt="image-20220404225337587" style="zoom: 50%;" />
 
@@ -323,15 +323,15 @@ perm用于设置对当前创建Topic的操作权限：2表示只写，4表示只
 
 3.然后启动，启动完了测试后关闭。
 
-## 4.控制台的安装与启动
+## 四.控制台的安装与启动
 
 通过https://github.com/apache/rocketmq-externals/releases链接下载控制台，完了以后改改配置添加Maven依赖后用maven打包再启动（目测类似于一个NameServer）
 
-## 5.集群搭建理论
+## 五.集群搭建理论
 
 <img src="RocketMQ简单笔记.assets\image-20220405145247023.png" alt="image-20220405145247023" style="zoom:50%;" />
 
-###  数据复制与刷盘策略
+###  1.数据复制与刷盘策略
 
 <img src="RocketMQ简单笔记.assets\image-20220405145324670.png" alt="image-20220405145324670" style="zoom:50%;" />
 
@@ -354,7 +354,7 @@ perm用于设置对当前创建Topic的操作权限：2表示只写，4表示只
 > 2）消息写入到Broker的内存，一般是写入到了PageCache
 > 3）对于异步 刷盘策略，消息会写入到PageCache后立即返回成功ACK。但并不会立即做落盘操作，而是当PageCache到达一定量时会自动进行落盘。
 
-### Broker集群模式
+### 2.Broker集群模式
 
 根据Broker集群中各个节点间关系的不同，Broker集群可以分为以下几类：
 **单Master**
@@ -392,7 +392,7 @@ broker集群由多个master构成，每个master又配置了多个slave（在配
 > **多Master+RAID阵列**，其仅仅可以保证数据不丢失，即不影响消息写入，但其可能会影响到消息的订阅。但其执行效率要远高于多Master多Slave集群
 > **多Master多Slave集群**，其不仅可以保证数据不丢失，也不会影响消息写入。其运行效率要低于多Master+RAID阵列
 
-## 6.磁盘阵列RAID（补充）
+## 六.磁盘阵列RAID（补充）
 
 主要了解了：
 
@@ -425,7 +425,7 @@ broker集群由多个master构成，每个master又配置了多个slave（在配
 
 `RAID分类`：软RAID、硬RAID、混合RAID（主要区别就是硬件成本的高低以及依赖CPU资源的程度（或者不依赖CPU资源））
 
-## 7.集群搭建实践
+## 七.集群搭建实践
 
 大致就是各种配置，实战的话要在多台机器上配置，列几个配置看看吧，感觉工作里不会配这些，这也不是学习的重点。
 
@@ -473,15 +473,15 @@ storeCheckpoint=~/store-s/checkpoint
 abortFile=~/store-s/abort
 ```
 
-## 8.mqadmin命令
+## 八.mqadmin命令
 
 大概就是一些可以通过控制台执行的命令
 
-# 三、RocketMQ工作原理
+# 第三章、RocketMQ工作原理
 
-## 1.消息的生产
+## 一.消息的生产
 
-### **消息的生产过程**
+### **1.消息的生产过程**
 
 Producer可以将消息写入到某Broker中的某Queue中，其经历了如下过程：
 
@@ -511,7 +511,7 @@ $\textcolor{RoyalBlue}{这里主要搞清楚路由表和Broker列表的结构}$
 >
 > $\textcolor{RoyalBlue}{(Broker的示意图)}$
 
-### Queue选择算法
+### 2.Queue选择算法
 
 对于无序消息，其Queue选择算法，也称为消息投递算法，常见的有两种：
 
@@ -529,7 +529,7 @@ $\textcolor{RoyalBlue}{这里主要搞清楚路由表和Broker列表的结构}$
 
 > 该算法也存在一个问题：消息在Queue上的分配不均匀。投递延迟小的Queue其可能会存在大量的消息。而对该Queue的消费者压力会增大，降低消息的消费能力，可能会导致MQ中消息的堆积。$\textcolor{RoyalBlue}{(因为生产者可能盯着一个Queue一直塞，虽然生产快了，但是到消费者消费的时候可能只有一个消费者在消费)}$
 
-## 2.消息的存储
+## 二.消息的存储
 
 RocketMQ中的消息存储在本地文件系统中，这些相关文件默认在当前用户主目录下的store目录中。
 
@@ -545,7 +545,7 @@ $\textcolor{RoyalBlue}{(这应该是一个Broker的目录，一个!!!)}$
 >`index`：其中存放着消息索引文件indexFile
 >`lock`：运行期间使用到的全局资源锁
 
-### **commitlog文件（存消息）**
+### **1.commitlog文件（存消息）**
 
 又称为mappedFile
 
@@ -574,7 +574,7 @@ mappedFile文件内容由一个个的消息单元构成。每个消息单元中�
 >
 > L(m+1) = L(m) + MsgLen(m) (m >= 0)
 
-### consumequeue（存索引）
+### 2.consumequeue（存索引）
 
 <img src="RocketMQ简单笔记.assets\image-20220407002950097.png" alt="image-20220407002950097" style="zoom:50%;" />
 
@@ -592,9 +592,9 @@ mappedFile文件内容由一个个的消息单元构成。每个消息单元中�
 
 每个consumequeue文件可以包含**30w**个索引条目，每个索引条目包含了三个消息重要属性：消息在mappedFile文件中的**偏移量CommitLog Offset**、**消息长度**、**消息Tag的hashcode值**。这三个属性占**20个字节**，所以每个文件的大小是固定的**30w * 20字节。**
 
-> 一个consumequeue文件中所有消息的Topic一定是相同的。但每条消息的Tag可能是不同的。
+> 一个consumequeue文件中所有消息的Topic一定是相同的。但每条消息的Tag可能是不同的。<a name="consumequeue"> </a>
 
-### 对文件的读写
+### 3.对文件的读写
 
 <img src="RocketMQ简单笔记.assets\image-20220407003515950.png" alt="image-20220407003515950" style="zoom:67%;" />
 
@@ -659,7 +659,7 @@ mappedFile文件就类似于Kafka中的segment段。
 
 $\textcolor{RoyalBlue}{(以后学到kafka再看0.0)}$
 
-## 3.indexFile（通过Key找消息）
+## 三.indexFile（通过Key找消息）
 
 $\textcolor{RoyalBlue}{(这玩意要时刻关注key)}$
 
@@ -667,7 +667,7 @@ $\textcolor{RoyalBlue}{(这玩意要时刻关注key)}$
 
 该查询是通过store目录中的index子目录中的indexFile进行索引实现的快速查询。当然，这个indexFile中的索引数据是在包含了key的消息被发送到Broker时写入的。如果消息中没有包含key，则不会写入。
 
-####  索引条目结构
+####  1.索引条目结构
 
 每个Broker中会包含一组indexFile，每个indexFile都是以一个时间戳命名的（这个indexFile被创建时的时间戳）。
 
@@ -709,7 +709,7 @@ $\textcolor{Red}{Indexes}$索引单元默写20个字节，其中存放着以下�
 > timeDiff：当前key对应消息的存储时间与当前indexFile创建时间的时间差
 > preIndexNo：当前slot下当前index索引单元的前一个index索引单元的indexNo
 
-#### indexFile的创建
+#### 2.indexFile的创建
 
 indexFile的文件名为当前文件被创建时的时间戳。这个时间戳有什么用处呢？
 
@@ -724,7 +724,7 @@ indexFile文件是何时创建的？其创建的条件（时机）有两个：
 
 > 由于可以推算出，一个indexFile的最大大小是：(40 + 500w * 4 + 2000w * 20)字节
 
-#### 查询流程
+#### 3.查询流程
 
 当消费者通过**业务key**来查询相应的消息时，其需要经过一个相对较复杂的查询流程。不过，在分析查询流程之前，首先要清楚几个定位计算式子：
 
@@ -743,13 +743,15 @@ indexFile文件是何时创建的？其创建的条件（时机）有两个：
 
 
 
-## 4.消息的消费
+## 四.消息的消费
 
 消费者从Broker中获取消息的方式有两种：pull拉取方式和push推动方式。消费者组对于消息消费的模式又分为两种：集群消费Clustering和广播消费Broadcasting。
 
-### 获取消息消费类型
+### 1.获取消息消费类型
 
-[第二大章系统架构的路由发现里面提过类似的知识](#pullModel)
+[第二大章系统架构的路由发现里面提过类似的知识](#pullModel1)
+
+<a name="pullModel2"> </a>
 
 #### 拉取式消费(pull)
 
@@ -757,19 +759,1009 @@ Consumer主动从Broker中拉取消息，主动权由Consumer控制。一旦获�
 
 > 由于拉取时间间隔是由用户指定的，所以在设置该间隔时需要注意平稳：间隔太短，空请求比例会增加；间隔太长，消息的实时性太差
 >
-> 
 
 #### 推送式消费(push)
 
+该模式下Broker收到数据后会主动推送给Consumer。该获取方式一般实时性较高。
+
+> 该获取方式是典型的**发布-订阅**模式，即Consumer向其关联的Queue注册了监听器，一旦发现有新的消息到来就会触发回调的执行，回调方法是Consumer去Queue中拉取消息。而这些都是基于Consumer与Broker间的长连接的。长连接的维护是需要消耗系统资源的。
+
 #### 对比
 
-### 消费模式
+pull：需要应用去实现对关联Queue的遍历，实时性差；但便于应用控制消息的拉取
+push：封装了对关联Queue的遍历，实时性强，但会占用较多的系统资源
 
-### Rebalance机制
+### 2.消费模式
 
-### Queue分配算法
+$\textcolor{RoyalBlue}{(感觉重点在于集群消费,这个图画的不明显啊，到底是topic还是queue，有点乱)}$
 
-### 至少一次原则
+#### 广播消费
+
+<img src="RocketMQ简单笔记.assets/image-20220411005637645.png" alt="image-20220411005637645" style="zoom: 50%;" />
+
+广播消费模式下，相同Consumer Group的每个Consumer实例都接收同一个Topic的**全量消息**。即每条消息都会被发送到Consumer Group中的**每个**Consumer。
+
+#### 集群消费
+
+<img src="RocketMQ简单笔记.assets/image-20220411005801891.png" alt="image-20220411005801891" style="zoom:50%;" />
+
+集群消费模式下，相同Consumer Group的每个Consumer实例**平均分摊**同一个Topic的消息。即每条消息只会被发送到Consumer Group中的**某个**Consumer。
+
+#### 消息进度保存
+
+> 广播模式：消费进度保存在consumer端。因为广播模式下consumer group中每个consumer都会消费所有消息，但它们的消费进度是不同。所以consumer各自保存各自的消费进度。
+>
+> 集群模式：消费进度保存在broker中。consumer group中的所有consumer共同消费同一个Topic中的消息，同一条消息只会被消费一次。消费进度会参与到了消费的负载均衡中，故消费进度是需要共享的。下图是broker中存放的各个Topic的各个Queue的消费进度。
+
+<img src="RocketMQ简单笔记.assets/image-20220411005944772.png" alt="image-20220411005944772" style="zoom:50%;" />
+
+<a name = "ConsumerOffsetManager1"> </a>[后续有具体说明](#ConsumerOffsetManager2)
+
+### 3.Rebalance机制
+
+Rebalance机制讨论的前提是：集群消费。
+
+#### 什么是Rebalance
+
+Rebalance即再均衡，指的是，将⼀个Topic下的多个Queue在同⼀个Consumer Group中的多个Consumer间进行重新分配的过程。
+
+Rebalance机制的本意是为了**提升消息的并行消费能力**。例如，⼀个Topic下5个队列，在只有1个消费者的情况下，这个消费者将负责消费这5个队列的消息。如果此时我们增加⼀个消费者，那么就可以给其中⼀个消费者分配2个队列，给另⼀个分配3个队列，从而提升消息的并行消费能力。
+
+#### Rebalance限制
+
+由于⼀个队列最多分配给⼀个消费者，因此当某个消费者组下的消费者实例数量大于队列的数量时，多余的消费者实例将分配不到任何队列。[前面提过](#consumerNum1)<a name="consumerNum2"> </a>
+
+#### Rebalance危害
+
+Rebalance的在提升消费能力的同时，也带来一些问题：
+
+**消费暂停**：在只有一个Consumer时，其负责消费所有队列；在新增了一个Consumer后会触发Rebalance的发生。此时原Consumer就需要暂停部分队列的消费，等到这些队列分配给新的Consumer后，这些暂停消费的队列才能继续被消费。
+
+**消费重复**：Consumer 在消费新分配给自己的队列时，必须接着之前Consumer 提交的消费进度的offset继续消费。然而默认情况下，offset是异步提交的，这个异步性导致提交到Broker的offset与Consumer实际消费的消息并不一致。这个不一致的差值就是可能会重复消费的消息。
+
+> 同步提交：consumer提交了其消费完毕的一批消息的offset给broker后，需要等待broker的成功ACK。当收到ACK后，consumer才会继续获取并消费下一批消息。在等待ACK期间，consumer是阻塞的。
+>
+> 异步提交：consumer提交了其消费完毕的一批消息的offset给broker后，不需要等待broker的成功ACK。consumer可以直接获取并消费下一批消息。**对于一次性读取消息的数量**，需要根据具体业务场景选择一个相对均衡的是很有必要的。因为数量过大，系统性能提升了，但产生重复消费的消息数量可能会增加；数量过小，系统性能会下降，但被重复消费的消息数量可能会减少。
+>
+> $\textcolor{RoyalBlue}{(去公司了估计都是异步)}$
+
+**消费突刺**：由于Rebalance可能导致重复消费，如果需要重复消费的消息过多，或者因为Rebalance暂停时间过长从而导致积压了部分消息。那么有可能会导致在Rebalance结束之后瞬间需要消费很多消息。
+
+#### Rebalance产生的原因
+
+导致Rebalance产生的原因，无非就两个：
+
+1) 消费者所订阅Topic的Queue数量发生变化
+
+2) 消费者组中消费者的数量发生变化。
+
+> 1）Queue数量发生变化的场景：
+> Broker扩容或缩容
+> Broker升级运维
+> Broker与NameServer间的网络异常
+> Queue扩容或缩容
+> 2）消费者数量发生变化的场景：
+> Consumer Group扩容或缩容
+> Consumer升级运维
+> Consumer与NameServer间网络异常
+
+#### Rebalance过程
+
+在Broker中维护着多个Map集合，这些集合中动态存放着当前Topic中Queue的信息、Consumer Group中Consumer实例的信息。一旦发现**消费者所订阅的Queue数量发生变化**，或**消费者组中消费者的数量发生变化**，立即向Consumer Group中的每个实例发出Rebalance通知。
+
+> **TopicConfigManager**：key是topic名称，value是TopicConfig。TopicConfig中维护着该Topic中所有Queue的数据。
+>
+> **ConsumerManager**：key是Consumser Group Id，value是ConsumerGroupInfo。ConsumerGroupInfo中维护着该Group中所有Consumer实例数据。
+>
+> **ConsumerOffsetManager**：key为**Topic与订阅该Topic的Group的组合,即topic@group**，value是一个内层Map。内层Map的key为QueueId，内层Map的value为该Queue的消费进度offset。
+>
+> [前面的图片就是真实描述](#ConsumerOffsetManager1)
+>
+> [后续用法](#ConsumerOffsetManager3)
+
+<a name = "ConsumerOffsetManager2"> </a>Consumer实例在接收到通知后会采用Queue分配算法自己获取到相应的Queue，即由Consumer实例自主进行Rebalance。
+
+#### 与Kafka对比
+
+Kafka中的Rebalance是由Consumer Leader完成的。而RocketMQ中的Rebalance是由每个Consumer自身完成的，Group中不存在Leader。
+
+(学到Kafka再说吧，要学的真多呀T.T)
+
+### 4.Queue分配算法
+
+一个Topic中的Queue只能由Consumer Group中的一个Consumer进行消费，而一个Consumer可以同时消费多个Queue中的消息。
+
+那么Queue与Consumer间的配对关系是如何确定的，即Queue要分配给哪个Consumer进行消费，也是有算法策略的。常见的有四种策略。这些策略是通过在创建Consumer时的构造器传进去的。
+
+#### 平均分配策略
+
+<img src="RocketMQ简单笔记.assets/image-20220411011616310.png" alt="image-20220411011616310" style="zoom:50%;" />
+
+该算法是要根据**avg = QueueCount / ConsumerCount** 的计算结果进行分配的。如果能够整除，则按顺序将avg个Queue逐个分配Consumer；如果不能整除，则将多余出的Queue按照Consumer顺序逐个分配。
+
+> 该算法即，先计算好每个Consumer应该分得几个Queue，然后再依次将这些数量的Queue逐个分配个Consumer。
+
+#### 环形平均策略
+
+<img src="RocketMQ简单笔记.assets/image-20220411011705304.png" alt="image-20220411011705304" style="zoom:50%;" />
+
+环形平均算法是指，根据消费者的顺序，依次在由queue队列组成的环形图中逐个分配。
+
+> 该算法不用事先计算每个Consumer需要分配几个Queue，直接一个一个分即可。
+
+#### 一致性hash策略
+
+<img src="RocketMQ简单笔记.assets/image-20220411011747074.png" alt="image-20220411011747074" style="zoom:50%;" />
+
+该算法会将consumer的hash值作为Node节点存放到hash环上，然后将queue的hash值也放到hash环上，通过顺时针方向，距离queue最近的那个consumer就是该queue要分配的consumer。
+
+> 该算法存在的问题：分配不均。好处：可以很好的减少rebalance带来的影响。
+
+#### 同机房策略
+
+<img src="RocketMQ简单笔记.assets/image-20220411011848874.png" alt="image-20220411011848874" style="zoom:50%;" />
+
+该算法会根据queue的部署机房位置和consumer的位置，过滤出当前consumer相同机房的queue。然后按照平均分配策略或环形平均策略对同机房queue进行分配。如果没有同机房queue，则按照平均分配策略或环形平均策略对所有queue进行分配。
+
+#### 对比（主要就是对比一致性hash算法）
+
+> **一致性hash算法存在的问题**：
+> 两种平均分配策略的分配效率较高，一致性hash策略的较低。因为一致性hash算法较复杂。另外，一致性hash策略分配的结果也很大可能上存在不平均的情况。
+>
+> **一致性hash算法存在的意义**：
+> 其可以有效减少由于消费者组扩容或缩容所带来的大量的Rebalance。
+>
+> **一致性hash算法的应用场景**：
+> Consumer数量变化较频繁的场景。
+
+### 5.至少一次原则
+
+RocketMQ有一个原则：每条消息必须要被**成功消费**一次。
+
+那么什么是成功消费呢？Consumer在消费完消息后会向其**消费进度记录器**提交其消费消息的offset，offset被成功记录到记录器中，那么这条消费就被成功消费了。
+
+> 什么是消费进度记录器？
+> 对于广播消费模式来说，Consumer本身就是消费进度记录器。
+> 对于集群消费模式来说，Broker是消费进度记录器。
+
+## 五.订阅关系的一致性
+
+订阅关系的一致性指的是，同一个消费者组（Group ID相同）下所有Consumer实例**所订阅的Topic**与**Tag**及**对消息的处理逻辑**必须完全一致。否则，消息消费的逻辑就会混乱，甚至导致消息丢失。
+
+### 1.正确订阅关系
+
+多个消费者组订阅了多个Topic，并且每个消费者组里的多个消费者实例的订阅关系保持了一致。
+
+<img src="RocketMQ简单笔记.assets/image-20220411124853280.png" alt="image-20220411124853280" style="zoom:50%;" />
+
+### 2.错误订阅关系
+
+一个消费者组订阅了多个Topic，但是该消费者组里的多个Consumer实例的订阅关系并没有保持一致。
+
+#### 订阅了不同Topic
+
+<img src="RocketMQ简单笔记.assets/image-20220411130236529.png" alt="image-20220411130236529" style="zoom: 50%;" />
+
+该例中的错误在于，同一个消费者组中的两个Consumer实例订阅了**不同的Topic**。
+
+Consumer实例1-1：（订阅了topic为jodie_test_A，tag为所有的消息）
+
+```java
+	Properties properties = new Properties();
+	properties.put(PropertyKeyConst.GROUP_ID, "GID_jodie_test_1");
+	Consumer consumer = ONSFactory.createConsumer(properties);
+	consumer.subscribe("jodie_test_A", "*", new MessageListener() {
+        public Action consume(Message message, ConsumeContext context) {
+            System.out.println(message.getMsgID());
+            return Action.CommitMessage;
+        }
+	});
+```
+
+Consumer实例1-2：（订阅了topic为jodie_test_B，tag为所有的消息）
+
+```java
+    Properties properties = new Properties();
+    properties.put(PropertyKeyConst.GROUP_ID, "GID_jodie_test_1");
+    Consumer consumer = ONSFactory.createConsumer(properties);
+    consumer.subscribe("jodie_test_B", "*", new MessageListener() {
+        public Action consume(Message message, ConsumeContext context) {
+            System.out.println(message.getMsgID());
+            return Action.CommitMessage;
+        }
+    });
+```
 
 
 
+#### 订阅了不同Tag
+
+该例中的错误在于，同一个消费者组中的两个Consumer订阅了**相同Topic的不同Tag**。
+
+Consumer实例2-1：（订阅了topic为jodie_test_A，tag为TagA的消息）
+
+```java
+    Properties properties = new Properties();
+    properties.put(PropertyKeyConst.GROUP_ID, "GID_jodie_test_2");
+    Consumer consumer = ONSFactory.createConsumer(properties);
+    consumer.subscribe("jodie_test_A", "TagA", new MessageListener() {
+        public Action consume(Message message, ConsumeContext context) {
+            System.out.println(message.getMsgID());
+            return Action.CommitMessage;
+        }
+    });
+```
+
+Consumer实例2-2：（订阅了topic为jodie_test_A，tag为所有的消息）
+
+```java
+    Properties properties = new Properties();
+    properties.put(PropertyKeyConst.GROUP_ID, "GID_jodie_test_2");
+    Consumer consumer = ONSFactory.createConsumer(properties);
+    consumer.subscribe("jodie_test_A", "*", new MessageListener() {
+        public Action consume(Message message, ConsumeContext context) {
+            System.out.println(message.getMsgID());
+            return Action.CommitMessage;
+        }
+    });
+```
+
+
+
+#### 订阅了不同数量的Topic
+
+该例中的错误在于，同一个消费者组中的两个Consumer订阅了**不同数量的Topic**。
+
+Consumer实例3-1：（该Consumer订阅了两个Topic）
+
+```java
+    Properties properties = new Properties();
+    properties.put(PropertyKeyConst.GROUP_ID, "GID_jodie_test_3");
+    Consumer consumer = ONSFactory.createConsumer(properties);
+    consumer.subscribe("jodie_test_A", "TagA", new MessageListener() {
+        public Action consume(Message message, ConsumeContext context) {
+            System.out.println(message.getMsgID());
+            return Action.CommitMessage;
+        }
+    });
+    consumer.subscribe("jodie_test_B", "TagB", new MessageListener() {
+        public Action consume(Message message, ConsumeContext context) {
+            System.out.println(message.getMsgID());
+            return Action.CommitMessage;
+    	}
+    });
+```
+
+
+
+Consumer实例3-2：（该Consumer订阅了一个Topic）
+
+```java
+    Properties properties = new Properties();
+    properties.put(PropertyKeyConst.GROUP_ID, "GID_jodie_test_3");
+    Consumer consumer = ONSFactory.createConsumer(properties);
+    consumer.subscribe("jodie_test_A", "TagB", new MessageListener() {
+        public Action consume(Message message, ConsumeContext context) {
+            System.out.println(message.getMsgID());
+            return Action.CommitMessage;
+        }
+    });
+```
+
+
+
+## 六.offset管理
+
+> 这里的offset指的是Consumer的消费进度offset。
+
+消费进度offset是用来记录每个Queue的不同消费组的消费进度的。根据**消费进度记录器**的不同，可以分为两种模式：本地模式和远程模式。
+
+### 1.offset本地管理模式
+
+当消费模式为**广播消费**时，offset使用本地模式存储。因为每条消息会被所有的消费者消费，每个消费者管理自己的消费进度，各个消费者之间不存在消费进度的交集。
+
+Consumer在广播消费模式下offset相关数据以json的形式持久化到Consumer本地磁盘文件中，默认文件路径为当前用户主目录下的**.rocketmq_offsets/{clientId}/{group}/Offsets.json** 。其中${clientId}为当前消费者id，默认为ip@DEFAULT；${group}为消费者组名称。
+
+### 2.offset远程管理模式
+
+当消费模式为**集群消费**时，offset使用远程模式管理。因为所有Cosnumer实例对消息采用的是均衡消费，所有Consumer共享Queue的消费进度。<a name = "ConsumerOffsetManager3"> </a>
+
+Consumer在**集群消费**模式下offset相关数据以json的形式持久化到Broker磁盘文件中，文件路径为当前用户主目录下的store/config/consumerOffset.json 。[前面有图](#ConsumerOffsetManager1)
+
+Broker启动时会加载这个文件，并写入到一个双层Map（ConsumerOffsetManager）[结构说明](#ConsumerOffsetManager2)。外层map的key为topic@group，value为内层map。内层map的key为queueId，value为offset。当发生Rebalance时，新的Consumer会从该Map中获取到相应的数据来继续消费。
+
+集群模式下offset采用远程管理模式，主要是为了保证Rebalance机制。
+
+> 例如，原先的Consumer挂了，那么在Rebalance后，新的Consumer可以及时获取到消费进度
+
+### 3.offset用途
+
+消费者是如何从最开始持续消费消息的？
+
+> 消费者要消费的第一条消息的起始位置是用户自己通过consumer.setConsumeFromWhere()方法指定的。
+
+在Consumer启动后，其要消费的第一条消息的起始位置常用的有三种，这三种位置可以通过枚举类型常量设置。这个枚举类型为ConsumeFromWhere。
+
+<img src="RocketMQ简单笔记.assets/image-20220411161718280.png" alt="image-20220411161718280" style="zoom: 50%;" />
+
+> CONSUME_FROM_LAST_OFFSET：从queue的当前最后一条消息开始消费
+>
+> CONSUME_FROM_FIRST_OFFSET：从queue的第一条消息开始消费
+>
+> CONSUME_FROM_TIMESTAMP：从指定的具体时间戳位置的消息开始消费。这个具体时间戳是通过另外一个语句指定的 。
+> consumer.setConsumeTimestamp(“20210701080000”) yyyyMMddHHmmss
+
+当消费完一批消息后，Consumer会提交其消费进度offset给Broker，Broker在收到消费进度后会将其更新到那个双层Map（ConsumerOffsetManager）及consumerOffset.json文件中，然后向该Consumer进行ACK，而ACK内容中包含**三项数据**：当前消费队列的最小offset（minOffset）、最大offset（maxOffset）、及**下次消费的起始offset**（nextBeginOffset）。
+
+### 4.重试队列
+
+<img src="RocketMQ简单笔记.assets/image-20220411161908417.png" alt="image-20220411161908417" style="zoom:50%;" />
+
+当rocketMQ对消息的消费出现异常时，会将发生异常的消息的offset提交到Broker中的重试队列。系统在发生消息消费异常时会为当前的topic@group创建一个重试队列，该队列以%RETRY%开头，到达重试时间后进行消费重试。
+
+### 5.offset的同步提交与异步提交
+
+集群消费模式下，Consumer消费完消息后会向Broker提交消费进度offset，其提交方式分为两种：
+
+**同步提交**： 消费者在消费完一批消息后会向broker提交这些消息的offset，然后等待broker的成功响应。若在等待超时之前收到了成功响应，则继续读取下一批消息进行消费（从ACK中获取**nextBeginOffset**）。若没有收到响应，则会重新提交，直到获取到响应。而在这个等待过程中，消费者是阻塞的。其严重影响了消费者的吞吐量。
+
+**异步提交**： 消费者在消费完一批消息后向broker提交offset，但无需等待Broker的成功响应，可以继续读取并消费下一批消息。这种方式增加了消费者的吞吐量。但需要注意，broker在收到提交的offset后，还是会向消费者进行响应的。可能还没有收到ACK，此时Consumer会**从Broker中直接获取nextBeginOffset**。$\textcolor{RoyalBlue}{(可能导致消息重复消费)}$
+
+## 七.消费幂等
+
+### 1.什么是消费幂等
+
+当出现消费者对某条消息重复消费的情况时，重复消费的结果与消费一次的结果是相同的，并且多次消费并未对业务系统产生任何负面影响，那么这个消费过程就是消费幂等的。
+
+> 在互联网应用中，尤其在网络不稳定的情况下，消息很有可能会出现重复发送或重复消费。如果重复的消息可能会影响业务处理，那么就应该对消息做幂等处理。
+
+### 2.消息重复的场景分析
+
+#### 发送时消息重复
+
+当一条消息已被成功发送到Broker并完成持久化，此时出现了网络闪断，从而导致Broker对Producer应答失败。 如果此时Producer意识到消息发送失败并尝试再次发送消息，此时Broker中就可能会出现两条内容相同并且Message ID也相同的消息，那么后续Consumer就一定会消费两次该消息。
+
+#### 消费时消息重复
+
+消息已投递到Consumer并完成业务处理，当Consumer给Broker反馈应答时网络闪断，Broker没有接收到消费成功响应。为了保证消息**至少被消费一次**的原则，Broker将在网络恢复后再次尝试投递之前已被处理过的消息。此时消费者就会收到与之前处理过的内容相同、Message ID也相同的消息。
+
+#### Rebalance时消息重复
+
+当Consumer Group中的Consumer数量发生变化时，或其订阅的Topic的Queue数量发生变化时，会触发Rebalance，此时Consumer可能会收到曾经被消费过的消息。
+
+### 3.通用解决方案
+
+#### 两要素
+
+幂等解决方案的设计中涉及到两项要素：幂等令牌，与唯一性处理。只要充分利用好这两要素，就可以设计出好的幂等解决方案。
+
+> **幂等令牌**：是生产者和消费者两者中的既定协议，通常指具备唯⼀业务标识的字符串。例如，订单号、流水号。一般由Producer随着消息一同发送来的。
+>
+> **唯一性处理**：服务端通过采用⼀定的算法策略，保证同⼀个业务逻辑不会被重复执行成功多次。例如，对同一笔订单的多次支付操作，只会成功一次。
+
+#### 解决方案
+
+对于常见的系统，幂等性操作的通用性解决方案是：
+
+1. 首先通过缓存去重。在缓存中如果已经存在了某幂等令牌，则说明本次操作是重复性操作；若缓存没有命中，则进入下一步。
+2. 在唯一性处理之前，先在数据库中查询幂等令牌作为索引的数据是否存在。若存在，则说明本次操作为重复性操作；若不存在，则进入下一步。
+3. 在同一事务中完成三项操作：唯一性处理后，将幂等令牌写入到缓存，并将幂等令牌作为唯一索引的数据写入到DB中。$\textcolor{RoyalBlue}{(或许是先写到DB再写到缓存)}$
+
+> 第1步已经判断过是否是重复性操作了，为什么第2步还要再次判断？能够进入第2步，说明已经不是重复操作了，第2次判断是否重复？
+>
+> 当然不重复。一般缓存中的数据是具有有效期的。缓存中数据的有效期一旦过期，就是发生缓存穿透，使请求直接就到达了DBMS。
+
+#### 解决方案举例
+
+以支付场景为例：
+1. 当支付请求到达后，首先在Redis缓存中却获取key为支付流水号的缓存value。若value不空，则说明本次支付是重复操作，业务系统直接返回调用侧重复支付标识；若value为空，则进入下一步操作
+2. 到DBMS中根据支付流水号查询是否存在相应实例。若存在，则说明本次支付是重复操作，业务系统直接返回调用侧重复支付标识；若不存在，则说明本次操作是首次操作，进入下一步完成唯一性处理
+3. 在分布式事务中完成三项操作：
+  - 完成支付任务
+  - 将当前支付流水号作为key，任意字符串作为value，通过set(key, value, expireTime)将数据写入到Redis缓存
+  - 将当前支付流水号作为主键，与其它相关数据共同写入到DBMS
+
+### 4.消费幂等的实现
+
+消费幂等的解决方案很简单：为消息指定不会重复的唯一标识。因为Message ID有可能出现重复的情况，所以真正安全的幂等处理，不建议以Message ID作为处理依据。最好的方式是以**业务唯一标识**作为幂等处理的关键依据，而业务的唯一标识可以通过消息Key设置。以支付场景为例，可以将消息的Key设置为订单号，作为幂等处理的依据。具体代码示例如下：
+
+```java
+Message message = new Message();
+message.setKey("ORDERID_100");
+SendResult sendResult = producer.send(message);
+```
+
+消费者收到消息时可以根据消息的Key即订单号来实现消费幂等：
+
+```java
+consumer.registerMessageListener(new MessageListenerConcurrently() {
+        @Override
+        public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+            for(MessageExt msg:msgs){
+                String key = msg.getKeys();
+                // 根据业务唯一标识Key做幂等处理
+                // ……
+            }
+            return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+        }
+    });
+```
+
+> RocketMQ能够保证消息不丢失，但不能保证消息不重复。
+
+## 八.消息堆积与消费延迟
+
+### 1.概念
+
+消息处理流程中，如果Consumer的消费速度跟不上Producer的发送速度，MQ中未处理的消息会越来越多（进的多出的少），这部分消息就被称为堆积消息。消息出现堆积进而会造成消息的消费延迟。以下场景需要重点关注消息堆积和消费延迟问题：
+
+- 业务系统上下游能力不匹配造成的持续堆积，且无法自行恢复。
+- 业务系统对消息的消费实时性要求较高，即使是短暂的堆积造成的消费延迟也无法接受。
+
+### 2.产生原因分析
+
+<img src="RocketMQ简单笔记.assets/image-20220412153520684.png" alt="image-20220412153520684" style="zoom:50%;" />
+
+Consumer使用长轮询Pull模式消费消息时，分为以下两个阶段：
+
+#### 消息拉取
+
+Consumer通过长轮询Pull模式批量拉取的方式从服务端获取消息，将拉取到的消息缓存到本地缓冲队列中。对于拉取式消费，在内网环境下会有很高的吞吐量，所以这一阶段一般不会成为消息堆积的瓶颈。
+
+> 一个单线程单分区的低规格主机(Consumer，4C8G)，其可达到几万的TPS（一个表达系统处理能力的性能指标，每秒处理的消息数，Transaction Per Second）。如果是多个分区多个线程，则可以轻松达到几十万的TPS。
+
+#### 消息消费
+
+Consumer将本地缓存的消息提交到消费线程中，使用业务消费逻辑对消息进行处理，处理完毕后获取到一个结果。这是真正的消息消费过程。此时Consumer的消费能力就完全依赖于消息的**消费耗时**和**消费并发度**了。如果由于业务处理逻辑复杂等原因，导致处理单条消息的耗时较长，则整体的消息吞吐量肯定不会高，此时就会导致Consumer本地缓冲队列达到上限，停止从服务端拉取消息。
+
+#### 结论
+
+消息堆积的主要瓶颈在于客户端的消费能力，而消费能力由**消费耗时**和**消费并发度决定**。注意，消费耗时的优先级要高于消费并发度。即在保证了消费耗时的合理性前提下，再考虑消费并发度问题。$\textcolor{RoyalBlue}{(后面先讲消费耗时，再讲消费并发度)}$
+
+### 3.消费耗时
+
+影响消息处理时长的主要因素是代码逻辑。而代码逻辑中可能会影响处理时长代码主要有两种类型：**CPU内部计算型代码**和**外部I/O操作型代码**。
+
+通常情况下代码中如果没有复杂的递归和循环的话，内部计算耗时相对外部I/O操作来说几乎可以忽略。所以外部IO型代码是影响消息处理时长的主要症结所在。
+
+> 外部IO操作型代码举例：
+> 读写外部数据库，例如对远程MySQL的访问
+> 读写外部缓存系统，例如对远程Redis的访问
+> 下游系统调用，例如Dubbo的RPC远程调用，Spring Cloud的对下游系统的Http接口调用
+>
+> 
+>
+> 关于下游系统调用逻辑需要进行提前梳理，掌握每个调用操作预期的耗时，这样做是为了能够判断消费逻辑中IO操作的耗时是否合理。通常消息堆积是由于下游系统出现了**服务异常**或**达到了DBMS容量限制**，导致消费耗时增加。
+>
+> 
+>
+> 服务异常，并不仅仅是系统中出现的类似500这样的代码错误，而可能是更加隐蔽的问题。例如，网络带宽问题。(这时候只能加带宽了，跟代码逻辑没啥关系)
+>
+> 达到了DBMS容量限制，其也会引发消息的消费耗时增加。（感觉应该是要数据库扩容?）
+
+### 4.消费并发度
+
+一般情况下，消费者端的**消费并发度由单节点线程数和节点数量共同决定**，其值为**单节点线程数* 节点数量**。不过，通常需要优先调整单节点的线程数，若单机硬件资源达到了上限，则需要通过横向扩展来提高消费并发度。
+
+> 单节点线程数，即单个Consumer所包含的线程数量
+>
+> 节点数量，即Consumer Group所包含的Consumer数量
+>
+> 
+>
+> 对于**普通消息**、延时消息及事务消息，并发度计算都是**单节点线程数*节点数量**。但对于**顺序消息**则是不同的。顺序消息的消费并发度等于**Topic的Queue分区数量**。[后面讲应用的时候会讲](#globalOrder1)
+>
+> 1）全局顺序消息：该类型消息的Topic只有一个Queue分区。其可以保证该Topic的所有消息被顺序消费。为了保证这个全局顺序性，Consumer Group中在同一时刻只能有一个Consumer的一个线程进行消费。所以其并发度为1。
+>
+> 2）分区顺序消息：该类型消息的Topic有多个Queue分区。其仅可以保证该Topic的每个Queue分区中的消息被顺序消费，不能保证整个Topic中消息的顺序消费。为了保证这个分区顺序性，每个Queue分区中的消息在Consumer Group中的同一时刻只能有一个Consumer的一个线程进行消费。即，在同一时刻最多会出现多个Queue分区有多个Consumer的多个线程并行消费。所以其并发度为Topic的分区数量。
+
+### 5.单机线程数计算
+
+对于一台主机中线程池中线程数的设置需要谨慎，不能盲目直接调大线程数，设置过大的线程数反而会带来大量的线程切换的开销。理想环境下单节点的最优线程数计算模型为：**C *（T1 + T2）/ T1**。
+
+- C：CPU内核数
+- T1：CPU内部逻辑计算耗时
+- T2：外部IO操作耗时
+
+> 最优线程数 = C *（T1 + T2）/ T1 = C * T1/T1 + C * T2/T1 = C + C * T2/T1
+>
+> 注意，该计算出的数值是理想状态下的理论数据，在生产环境中，不建议直接使用。而是根据当前环境，先设置一个比该值小的数值然后观察其压测效果，然后再根据效果逐步调大线程数，直至找到在该环境中性能最佳时的值。
+
+### 6.如何避免
+
+为了避免在业务使用时出现非预期的**消息堆积**和**消费延迟**问题，需要在前期设计阶段对整个业务逻辑进行完善的排查和梳理。其中最重要的就是梳理消息的**消费耗时**和**设置消息消费的并发度**。
+
+#### 梳理消息的消费耗时
+
+通过压测获取消息的消费耗时，并对耗时较高的操作的代码逻辑进行分析。梳理消息的消费耗时需要关注以下信息：
+
+> 1. 消息消费逻辑的计算复杂度是否过高，代码是否存在无限循环和递归等缺陷。
+> 2. 消息消费逻辑中的I/O操作是否是必须的，能否用本地缓存等方案规避。
+> 3. 消费逻辑中的复杂耗时的操作是否可以做异步化处理。如果可以，是否会造成逻辑错乱。
+
+#### 设置消费并发度
+
+对于消息消费并发度的计算，可以通过以下两步实施：
+
+> 1. 逐步调大单个Consumer节点的线程数，并观测节点的系统指标，得到单个节点最优的消费线程数和消息吞吐量。
+>
+> 2. 根据上下游链路的流量峰值计算出需要设置的节点数。
+>
+>    ​	节点数 = 流量峰值 / 单个节点消息吞吐量
+
+## 九.消息的清理
+
+消息被消费过后会被清理掉吗？不会的。
+
+消息是被顺序存储在commitlog文件的，且消息大小不定长，所以消息的清理是不可能以消息为单位进行清理的，而是以commitlog文件为单位进行清理的。若以消息为单位则会急剧下降清理效率，并且实现逻辑复杂。
+
+commitlog文件存在一个过期时间，默认为72小时，即三天。除了用户手动清理外，在以下情况下也会被自动清理，无论文件中的消息是否被消费过：
+
+- 文件过期，且到达清理时间点（默认为凌晨4点）后，自动清理过期文件
+- 文件过期，且磁盘空间占用率已达过期清理警戒线（默认75%）后，无论是否达到清理时间点，都会自动清理过期文件
+- 磁盘占用率达到清理警戒线（默认85%）后，开始按照设定好的规则清理文件，无论是否过期。默认会从最老的文件开始清理
+- 磁盘占用率达到系统危险警戒线（默认90%）后，Broker将拒绝消息写入
+
+> 需要注意以下几点：
+> 1）对于RocketMQ系统来说，删除一个1G大小的文件，是一个压力巨大的IO操作。在删除过程中，系统性能会骤然下降。所以，其默认清理时间点为凌晨4点，访问量最小的时间。也正因如果，我们要保障磁盘空间的空闲率，不要使系统出现在其它时间点删除commitlog文件的情况。
+> 2）官方建议RocketMQ服务的Linux文件系统采用ext4。因为对于文件删除操作，ext4要比ext3性能更好
+
+<img src="RocketMQ简单笔记.assets/image-20220412190403040.png" alt="image-20220412190403040" style="zoom:50%;" />
+
+# 第四章、RocketMQ应用
+
+## 一、普通消息
+
+### 1.消息发送分类
+
+#### 同步发送消息
+
+同步发送消息是指，Producer发出⼀条消息后，会在收到MQ返回的ACK之后才发下⼀条消息。该方式的消息可靠性最高，但消息发送效率太低。
+
+<img src="RocketMQ简单笔记.assets/image-20220413213743021.png" alt="image-20220413213743021" style="zoom:50%;" />
+
+#### 异步发送消息
+
+异步发送消息是指，Producer发出消息后无需等待MQ返回ACK，直接发送下⼀条消息。该方式的消息可靠性可以得到保障，消息发送效率也可以。
+
+<img src="RocketMQ简单笔记.assets/image-20220413214036134.png" alt="image-20220413214036134" style="zoom:50%;" />
+
+
+
+#### 单向发送消息
+
+单向发送消息是指，Producer仅负责发送消息，不等待、不处理MQ的ACK。该发送方式时MQ也不返回ACK。该方式的消息发送效率最高，但消息可靠性较差。
+
+<img src="RocketMQ简单笔记.assets/image-20220413214149185.png" alt="image-20220413214149185" style="zoom:50%;" />
+
+### 2.代码举例
+
+无非就是先导入依赖，然后上代码，java里面加sendCallback()就表示异步，不知道golang咋样
+
+```java
+// 消息发送的状态
+public enum SendStatus {
+    SEND_OK, // 发送成功
+    FLUSH_DISK_TIMEOUT, // 刷盘超时。当Broker设置的刷盘策略为同步刷盘时才可能出现这种异常状态。异步刷盘不会出现
+    FLUSH_SLAVE_TIMEOUT, // Slave同步超时。当Broker集群设置的Master-Slave的复制方式为同步复制时才可能出现这种异常状态。异步复制不会出现
+    SLAVE_NOT_AVAILABLE, // 没有可用的Slave。当Broker集群设置为Master-Slave的复制方式为同步复制时才可能出现这种异常状态。异步复制不会出现
+}
+```
+
+贴个**异步消息发送生产者**的代码吧，顺便吐吐槽。这里面居然还sleep，golang的协程真香啊
+
+```java
+public class AsyncProducer {
+    public static void main(String[] args) throws Exception {
+        DefaultMQProducer producer = new DefaultMQProducer("pg");
+        producer.setNamesrvAddr("rocketmqOS:9876");
+        // 指定异步发送失败后不进行重试发送
+        producer.setRetryTimesWhenSendAsyncFailed(0);
+        // 指定新创建的Topic的Queue数量为2，默认为4
+        producer.setDefaultTopicQueueNums(2);
+        producer.start();
+        for (int i = 0; i < 100; i++) {
+            byte[] body = ("Hi," + i).getBytes();
+            try {
+                Message msg = new Message("myTopicA", "myTag", body);
+                // 异步发送。指定回调
+                producer.send(msg, new SendCallback() {
+                    // 当producer接收到MQ发送来的ACK后就会触发该回调方法的执行
+                    @Override
+                    public void onSuccess(SendResult sendResult) {
+                    	System.out.println(sendResult);
+                    }
+                    @Override
+                    public void onException(Throwable e) {
+                    	e.printStackTrace();
+                    }
+                });
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+    	} // end-for
+        // sleep一会儿
+        // 由于采用的是异步发送，所以若这里不sleep，
+        // 则消息还未发送就会将producer给关闭，报错
+    	TimeUnit.SECONDS.sleep(3);
+    	producer.shutdown();
+    }
+}
+```
+
+
+
+## 二、顺序消息
+
+### 1.什么是顺序消息
+
+顺序消息指的是，严格按照消息的**发送顺序**进行**消费**的消息(FIFO)。
+
+默认情况下生产者会把消息以Round Robin轮询方式发送到不同的Queue分区队列；而消费消息时会从多个Queue上拉取消息，这种情况下的发送和消费是不能保证顺序的。如果将消息仅发送到同一个Queue中，消费时也只从这个Queue上拉取消息，就严格保证了消息的顺序性。
+
+### 2.为什么需要顺序消息
+
+例如，现在有TOPIC `ORDER_STATUS` (订单状态)，其下有4个Queue队列，该Topic中的不同消息用于描述当前订单的不同状态。假设订单有状态： `未支付`、`已支付`、`发货中`、`发货成功`、`发货失败`。
+
+根据以上订单状态，生产者从**时序**上可以生成如下几个消息：
+
+订单T0000001:`未支付` --> 订单T0000001:`已支付` --> 订单T0000001:`发货中` --> 订单T0000001:`发货失败`
+
+消息发送到MQ中之后，Queue的选择如果采用轮询策略，消息在MQ的存储可能如下：
+
+<img src="RocketMQ简单笔记.assets/image-20220414000007755.png" alt="image-20220414000007755" style="zoom: 67%;" />
+
+这种情况下，我们希望Consumer消费消息的顺序和我们发送是一致的，然而上述MQ的投递和消费方式，我们无法保证顺序是正确的。对于顺序异常的消息，Consumer即使设置有一定的状态容错，也不能完全处理好这么多种随机出现组合情况。
+
+<img src="RocketMQ简单笔记.assets/image-20220414000051649.png" alt="image-20220414000051649" style="zoom:67%;" />
+
+基于上述的情况，可以设计如下方案：**对于相同订单号的消息，通过一定的策略，将其放置在一个Queue中**，然后消费者再采用一定的策略（例如，一个线程独立处理一个queue，保证处理消息的顺序性），能够保证消费的顺序性。
+
+### 3.有序性分类。
+
+根据有序范围的不同，RocketMQ可以严格地保证两种消息的有序性：**分区有序**与**全局有序**。
+
+#### 全局有序<a name=globalOrder1> </a>
+
+<img src="RocketMQ简单笔记.assets/image-20220414000221593.png" alt="image-20220414000221593" style="zoom:50%;" />
+
+当发送和消费参与的Queue只有一个时所保证的有序是整个Topic中消息的顺序， 称为**全局有序**。
+
+> 在创建Topic时指定Queue的数量。有三种指定方式：
+> 1）在代码中创建Producer时，可以指定其自动创建的Topic的Queue数量
+> 2）在RocketMQ可视化控制台中手动创建Topic时指定Queue数量
+> 3）使用mqadmin命令手动创建Topic时指定Queue数量
+
+#### 分区有序
+
+<img src="RocketMQ简单笔记.assets/image-20220414001009926.png" alt="image-20220414001009926" style="zoom:67%;" />
+
+如果有多个Queue参与，其仅可保证在该Queue分区队列上的消息顺序，则称为**分区有序**。
+
+> 如何实现Queue的选择？
+>
+> 在定义Producer时我们**可以指定消息队列选择器**，而这个选择器是我们自己实现了MessageQueueSelector接口定义的。
+>
+> 
+>
+> 在定义选择器的选择算法时，一般需要使用**选择key**。这个**选择key**可以是**消息key**也可以是其它数据。但无论谁做**选择key**，都不能重复，都是唯一的。
+>
+> 一般性的选择算法是，让**选择key**（或其hash值）与该Topic所包含的Queue的数量取模，其结果即为选择出的Queue的QueueId。
+>
+> 取模算法存在一个问题：不同**选择key**与Queue数量取模结果可能会是相同的，即不同**选择key**的消息可能会出现在相同的Queue，即同一个Consuemr可能会消费到不同**选择key**的消息。这个问题如何解决？
+>
+> 一般性的作法是，从消息中获取到选择key，对其进行判断。若是当前Consumer需要消费的消息，则直接消费，否则，**什么也不做**。这种做法要求选择key要能够随着消息一起被Consumer获取到。此时使用消息key作为选择key是比较好的做法。
+>
+> 以上做法会不会出现如下新的问题呢？$\textcolor{RoyalBlue}{(这个思想很有意思！！！涉及到前面的概念)}$
+>
+> 不属于那个Consumer的消息被拉取走了，那么应该消费该消息的Consumer是否还能再消费该消息呢？同一个Queue中的消息不可能被同一个Group中的不同Consumer同时消费。所以，消费现一个Queue的不同选择key的消息的Consumer一定属于不同的Group。而不同的Group中的Consumer间的消费是相互隔离的，互不影响的。
+
+### 4.代码举例
+
+```java
+public class OrderedProducer {
+    public static void main(String[] args) throws Exception {
+        DefaultMQProducer producer = new DefaultMQProducer("pg");
+        producer.setNamesrvAddr("rocketmqOS:9876");
+        producer.start();
+        for (int i = 0; i < 100; i++) {
+            Integer orderId = i;
+            byte[] body = ("Hi," + i).getBytes();
+            Message msg = new Message("TopicA", "TagA", body);
+            SendResult sendResult = producer.send(msg, new
+            MessageQueueSelector() {
+            @Override
+            public MessageQueue select(List<MessageQueue> mqs,
+            Message msg, Object arg) {
+            Integer id = (Integer) arg;
+            int index = id % mqs.size();
+            return mqs.get(index);
+            }
+            }, orderId);//这里的public MessageQueue select()有三个参数，其中这个例子orderId这个参数会被传到arg中。详情看课件的代码部分
+            System.out.println(sendResult);
+        }
+        producer.shutdown();
+    }
+}
+```
+
+
+
+## 三、延时消息
+
+### 1.什么是延时消息
+
+当消息写入到Broker后，在指定的时长后才可被消费处理的消息，称为延时消息。
+
+采用RocketMQ的延时消息可以实现定时任务的功能，而无需使用定时器。典型的应用场景是，**电商交易中超时未支付关闭订单**的场景，12306平台订票超时未支付取消订票的场景。
+
+> 在电商平台中，订单创建时会发送一条延迟消息。这条消息将会在30分钟后投递给后台业务系统（Consumer），后台业务系统收到该消息后会判断对应的订单是否已经完成支付。如果未完成，则取消订单，将商品再次放回到库存；如果完成支付，则忽略。
+
+### 2.延时等级
+
+延时消息的延迟时长不支持随意时长的延迟，是通过特定的**延迟等级**来指定的。延时等级定义在RocketMQ服务端的MessageStoreConfig 类中的如下变量中：
+
+<img src="RocketMQ简单笔记.assets/image-20220414135107599.png" alt="image-20220414135107599" style="zoom:80%;" />
+
+即，若指定的延时等级为3，则表示延迟时长为10s，即延迟等级是从1开始计数的。
+
+当然，如果需要自定义的延时等级，可以通过在broker加载的配置中新增如下配置（例如下面增加了1天这个等级1d）。配置文件在RocketMQ安装目录下的conf目录中。
+
+```java
+messageDelayLevel = 1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h 1d
+```
+
+
+
+### 3.延时消息实现原理
+
+<img src="RocketMQ简单笔记.assets/image-20220414135218208.png" alt="image-20220414135218208" style="zoom:50%;" />
+
+相对于是把带延迟的消息专门修改topic了先存起来，然后时间到了以后再重新发一次，重发的时候这个ScheduleMessageService有点类似于生产者。
+
+具体实现方案分以下三步：（即修改消息、投递延时消息、将消息重新写入commitlog）
+
+#### 修改消息
+
+Producer将消息发送到Broker后，Broker会首先将消息写入到commitlog文件，然后需要将其分发到相应的consumequeue。不过，在分发之前，系统会先判断消息中是否带有延时等级。若没有，则直接正常分发；若有则需要经历一个复杂的过程：
+
+> 1. 修改消息的Topic为SCHEDULE_TOPIC_XXXX
+>
+> 2. 根据延时等级，在consumequeue目录中SCHEDULE_TOPIC_XXXX主题下创建出相应的queueId目录与consumequeue文件（如果没有这些目录与文件的话）。
+>
+>    延迟等级delayLevel与queueId的对应关系为queueId = delayLevel -1。
+>
+>    需要注意，在创建queueId目录时，并不是一次性地将所有延迟等级对应的目录全部创建完毕，而是用到哪个延迟等级创建哪个目录。
+>
+>    <img src="RocketMQ简单笔记.assets/image-20220414135855992.png" alt="image-20220414135855992" style="zoom:50%;" />
+>
+> 3. 修改消息索引单元内容。索引单元中的**Message Tag HashCode**部分原本存放的是消息的Tag的Hash值[（前面有提过）](#consumequeue)。现修改为消息的投递时间。投递时间是指该消息被重新修改为原Topic后再次被写入到commitlog中的时间。投递时间 = 消息存储时间 + 延时等级时间。消息存储时间指的是消息被发送到Broker时的时间戳。
+>
+>    <img src="RocketMQ简单笔记.assets/image-20220414140144482.png" alt="image-20220414140144482" style="zoom:50%;" />
+>
+> 4. 将消息索引写入到SCHEDULE_TOPIC_XXXX主题下相应的consumequeue中
+>
+>    SCHEDULE_TOPIC_XXXX目录中各个延时等级Queue中的消息是如何排序的？
+>    是**按照消息投递时间排序**的。一个Broker中同一等级的所有延时消息会被写入到consumequeue目录中SCHEDULE_TOPIC_XXXX目录下相同Queue中。即一个Queue中消息投递时间的延迟等级时间是相同的。那么投递时间就取决于**消息存储时间**了。即按照消息被发送到Broker的时间进行排序的。
+
+#### 投递延时消息
+
+Broker内部有⼀个**延迟消息服务类ScheuleMessageService**，其会消费SCHEDULE_TOPIC_XXXX中的消息，即按照每条消息的投递时间，将延时消息投递到⽬标Topic中。不过，在投递之前会从commitlog中将原来写入的消息再次读出，并**将其原来的延时等级设置为0**，即原消息变为了一条不延迟的普通消息。然后再次将消息投递到目标Topic中。
+
+> ScheuleMessageService在Broker启动时，会创建并启动一个定时器TImer，用于执行相应的定时任务。系统会根据延时等级的个数，定义相应数量的TimerTask，每个TimerTask负责一个延迟等级消息的消费与投递。每个TimerTask都会**检测相应Queue队列的第一条消息**是否到期。若第一条消息未到期，则后面的所有消息更不会到期（消息是按照投递时间排序的）；若第一条消息到期了，则将该消息投递到目标Topic，即消费该消息。
+
+#### 将消息重新写入commitlog
+
+延迟消息服务类ScheuleMessageService将延迟消息再次发送给了commitlog，并再次形成新的消息索引条目，分发到相应Queue。
+
+> 这其实就是一次普通消息发送。只不过这次的消息Producer是延迟消息服务类ScheuleMessageService。
+
+### 4.代码举例
+
+就是加了一个设置消息延迟等级的
+
+```java
+// 指定消息延迟等级为3级，即延迟10s
+msg.setDelayTimeLevel(3);
+```
+
+## 四、事务消息
+
+### 1.问题引入
+
+这里的一个需求场景是：工行用户A向建行用户B转账1万元。
+我们可以使用同步消息来处理该需求场景：
+
+<img src="RocketMQ简单笔记.assets/image-20220414162807949.png" alt="image-20220414162807949" style="zoom:50%;" />
+
+> 1. 工行系统发送一个给B增款1万元的同步消息M给Broker
+> 2. 消息被Broker成功接收后，向工行系统发送成功ACK
+> 3. 工行系统收到成功ACK后从用户A中扣款1万元
+> 4. 建行系统从Broker中获取到消息M
+> 5. 建行系统消费消息M，即向用户B中增加1万元
+>
+> 这其中是有问题的：若第3步中的扣款操作失败，但消息已经成功发送到了Broker。对于MQ来说，只要消息写入成功，那么这个消息就可以被消费。此时建行系统中用户B增加了1万元。出现了数据不一致问题。
+
+### 2.解决思路
+
+解决思路是，让第1、2、3步具有原子性，要么全部成功，要么全部失败。即消息发送成功后，必须要保证扣款成功。如果扣款失败，则回滚发送成功的消息。而该思路即使用**事务消息**。这里要使用**分布式事务**解决方案。
+
+<img src="RocketMQ简单笔记.assets/image-20220414162911935.png" alt="image-20220414162911935" style="zoom:50%;" />
+
+使用`事务消息`来处理该需求场景：
+
+> 1. 事务管理器TM向事务协调器TC发起指令，开启`全局事务`
+>
+> 2. 工行系统发一个给B增款1万元的事务消息M给TC
+>
+> 3. TC会向Broker发送`半事务消息prepareHalf` ，将消息M 预提交到Broker。此时的建行系统是看不到Broker中的消息M的
+>
+> 4. Broker会将`预提交`执行结果Report给TC。
+>
+> 5. 如果预提交失败，则TC会向TM上报预提交失败的响应，全局事务结束；
+>
+>   如果预提交成功，TC会调用工行系统的`回调操作`，去完成工行用户A的`预扣款`1万元的操作
+>
+> 6. 工行系统会向TC发送预扣款执行结果，即`本地事务`的执行状态
+>
+> 7. TC收到预扣款执行结果后，会将结果上报给TM。
+>
+>    ```java
+>    // 描述本地事务执行状态,预扣款执行结果存在三种可能性
+>    public enum LocalTransactionState {
+>        COMMIT_MESSAGE, // 本地事务执行成功
+>        ROLLBACK_MESSAGE, // 本地事务执行失败
+>        UNKNOW, // 不确定，表示需要进行回查以确定本地事务的执行结果
+>    }
+>    ```
+>
+> 8. TM会根据上报结果向TC发出不同的确认指令
+>   若预扣款成功（本地事务状态为COMMIT_MESSAGE），则TM向TC发送Global Commit指令
+>   若预扣款失败（本地事务状态为ROLLBACK_MESSAGE），则TM向TC发送Global Rollback指令
+>   若现未知状态（本地事务状态为UNKNOW），则会触发工行系统的本地事务状态`回查操作`。回查操作会将回查结果，即COMMIT_MESSAGE或ROLLBACK_MESSAGE Report给TC。TC将结果上报给TM，TM会再向TC发送最终确认指令Global Commit或Global Rollback
+>
+> 9. TC在接收到指令后会向Broker与工行系统发出确认指令
+>
+>   - TC接收的若是Global Commit指令，则向Broker与工行系统发送Branch Commit指令。此时Broker中的消息M才可被建行系统看到；此时的工行用户A中的扣款操作才真正被确认
+>   - TC接收到的若是Global Rollback指令，则向Broker与工行系统发送Branch Rollback指令。此时Broker中的消息M将被撤销；工行用户A中的扣款操作将被回滚
+>
+> 
+>
+> 以上方案就是为了确保`消息投递`与`扣款操作`能够在一个事务中，要成功都成功，有一个失败，则全部回滚。
+>
+> 以上方案并不是一个典型的`XA模式`。因为`XA模式`中的分支事务是异步的，而`事务消息`方案中的消息预提交与预扣款操作间是同步的。$\textcolor{RoyalBlue}{(关于事务消息的定义，课里面讲的不清楚，以后有疑问的话自己查,好像也不是什么很复杂的概念)}$
+
+### 3.基础
+
+#### 分布式事务
+
+对于分布式事务，通俗地说就是，一次操作由若干分支操作组成，这些分支操作分属不同应用，分布在不同服务器上。分布式事务需要保证这些分支操作要么全部成功，要么全部失败。分布式事务与普通事务一样，就是为了保证操作结果的一致性。
+
+#### 事务消息
+
+RocketMQ提供了类似X/Open XA的分布式事务功能，通过事务消息能达到分布式事务的最终一致。XA是一种分布式事务解决方案，一种分布式事务处理模式。
+
+#### 半事务消息
+
+暂不能投递的消息，发送方已经成功地将消息发送到了Broker，但是Broker未收到最终确认指令，此时该消息被标记成“暂不能投递”状态，即不能被消费者看到。处于该种状态下的消息即半事务消息。
+
+#### 本地事务状态
+
+Producer `回调操作`执行的结果为本地事务状态，其会发送给TC，而TC会再发送给TM。TM会根据TC发送来的本地事务状态来决定全局事务确认指令。
+
+#### 消息回查
+
+<img src="RocketMQ简单笔记.assets/image-20220414164138546.png" alt="image-20220414164138546" style="zoom:50%;" />
+
+消息回查，即重新查询本地事务的执行状态。本例就是重新到DB中查看预扣款操作是否执行成功。
+
+> 注意，消息回查不是重新执行回调操作。回调操作是进行预扣款操作，而消息回查则是查看预扣款操作执行的结果。
+> 引发消息回查的原因最常见的有两个：
+>
+> 1)回调操作返回UNKNOWN
+>
+> 2)TC没有接收到TM的最终全局事务确认指令
+
+#### RocketMQ中的消息回查设置
+
+关于消息回查，有三个常见的属性设置。它们都在broker加载的配置文件中设置，例如：
+
+> transactionTimeout=20，指定TM在20秒内应将最终确认状态发送给TC，否则引发消息回查。默认为60秒
+> transactionCheckMax=5，指定最多回查5次，超过后将丢弃消息并记录错误日志。默认15次。
+> transactionCheckInterval=10，指定设置的多次消息回查的时间间隔为10秒。默认为60秒。
+
+### 4.XA模式三剑客
+
+#### XA协议
+
+XA（Unix Transaction）是一种分布式事务解决方案，一种分布式事务处理模式，是基于XA协议的。XA协议由Tuxedo（Transaction for Unix has been Extended for Distributed Operation，分布式操作扩展之后的Unix事务系统）首先提出的，并交给X/Open组织，作为资源管理器与事务管理器的接口标准。
+
+XA模式中有三个重要组件：TC、TM、RM。
+
+#### TC
+
+Transaction Coordinator，事务协调者。维护全局和分支事务的状态，驱动全局事务提交或回滚。
+
+> RocketMQ中Broker充当着TC。
+
+#### TM
+
+Transaction Manager，事务管理器。定义全局事务的范围：开始全局事务、提交或回滚全局事务。它实际是全局事务的发起者。
+
+> RocketMQ中事务消息的Producer充当着TM。
+
+#### RM
+
+Resource Manager，资源管理器。管理分支事务处理的资源，与TC交谈以注册分支事务和报告分支事务的状态，并驱动分支事务提交或回滚。
+
+> RocketMQ中事务消息的Producer及Broker均是RM。
+
+### 5.XA模式架构
+
+<img src="RocketMQ简单笔记.assets/image-20220414233053341.png" alt="image-20220414233053341" style="zoom:50%;" />
+
+XA模式是一个典型的2PC（2阶段提交），其执行原理如下：
+
+1. TM向TC发起指令，开启一个全局事务。
+2. 根据业务要求，各个RM会逐个向TC注册分支事务，然后TC会逐个向RM发出预执行指令。
+3. 各个RM在接收到指令后会在进行本地事务预执行。
+4. RM将预执行结果Report给TC。当然，这个结果可能是成功，也可能是失败。
+5. TC在接收到各个RM的Report后会将汇总结果上报给TM，根据汇总结果TM会向TC发出确认指令。
+- 若所有结果都是成功响应，则向TC发送Global Commit指令。
+- 只要有结果是失败响应，则向TC发送Global Rollback指令。
+6. TC在接收到指令后再次向RM发送确认指令。
+
+> 事务消息方案并不是一个典型的XA模式。因为XA模式中的分支事务是异步的，而事务消息方案中的消息预提交与预扣款操作间是同步的。$\textcolor{RoyalBlue}{(前面举例的时候提过一次)}$
+
+### 6.注意
+
+1. 事务消息不支持延时消息
+2. 对于事务消息要做好幂等性检查，因为事务消息可能不止一次被消费（因为存在回滚后再提交的情况）
+
+### 7.代码举例
+
+稍微看看线程池的内容就好，其他的有需要再说，要大致说明的话可以分三类:
+
+1.定义事务监听器
+
+主要关注
+
+- 回调操作方法：消息预提交成功就会触发该方法的执行，用于完成本地事务
+- 回查方法：引发消息回查的原因最常见的有两个，1)回调操作返回UNKNWON。2)TC没有接收到TM的最终全局事务确认指令
+
+2.定义事务消息生产者
+
+3.定义消费者
+
+```java
+/**
+* 定义一个线程池
+* @param corePoolSize 线程池中核心线程数量
+* @param maximumPoolSize 线程池中最多线程数
+* @param keepAliveTime 这是一个时间。当线程池中线程数量大于核心线程数量时，多余空闲线程的存活时长，
+* @param unit 时间单位
+* @param workQueue 临时存放任务的队列，其参数就是队列的长度
+* @param threadFactory 线程工厂
+*/
+    ExecutorService executorService = new ThreadPoolExecutor(2, 5,100, TimeUnit.SECONDS,
+new ArrayBlockingQueue<Runnable>(2000), new ThreadFactory() {
+    @Override
+    public Thread newThread(Runnable r) {
+    Thread thread = new Thread(r);
+    thread.setName("client-transaction-msg-check-thread");
+    return thread;
+    }
+});
+```
+
+
+
+## 五、批量消息
+
+## 六、消息过滤
+
+## 七、消息发送重试机制
+
+## 八、消息消费重试机制
+
+## 九、死信队列
