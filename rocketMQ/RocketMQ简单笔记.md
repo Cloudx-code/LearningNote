@@ -255,7 +255,9 @@ $\textcolor{red}{Remoting Module}$：整个Broker的实体，负责处理来自c
 
 $\textcolor{red}{Client Manager}$：客户端管理器。负责接收、解析客户端(Producer/Consumer)请求，管理客户端。例如，维护Consumer的Topic订阅信息
 
-$\textcolor{red}{Store Service}$：存储服务。提供方便简单的API接口，处理消息存储到物理硬盘和消息查询功能。HA Service：高可用服务，提供Master Broker 和 Slave Broker之间的数据同步功能。
+$\textcolor{red}{Store Service}$：存储服务。提供方便简单的API接口，处理消息存储到物理硬盘和消息查询功能。
+
+$\textcolor{red}{HA Service}$：高可用服务，提供Master Broker 和 Slave Broker之间的数据同步功能。
 
 $\textcolor{red}{Index Service}$：索引服务。根据特定的Message key，对投递到Broker的消息进行索引服务，同时也提供根据Message Key对消息进行快速查询的功能。
 
@@ -301,6 +303,8 @@ Master与Slave 的对应关系是通过指定相同的BrokerName、不同的Brok
 
 从物理上来讲，读/写队列是同一个队列。所以，不存在读/写队列数据同步问题。读/写队列是逻辑上进行区分的概念。一般情况下，读/写队列数量是相同的。
 
+>如果读写队列数量不同会出现的状况举例：
+>
 >例如，创建Topic时设置的写队列数量为8，读队列数量为4，此时系统会创建8个Queue，分别是0 1 2 3 4 5 6 7。Producer会将消息写入到这8个队列，但Consumer只会消费0 1 2 3这4个队列中的消息，4 5 6 7中的消息是不会被消费到的。
 >
 >再如，创建Topic时设置的写队列数量为4，读队列数量为8，此时系统会创建8个Queue，分别是0 1 2 3 4 5 6 7。Producer会将消息写入到0 1 2 3 这4个队列，但Consumer会消费0 1 2 3 4 5 6 7这8个队列中的消息，但是4 5 6 7中是没有消息的。此时假设Consumer Group中包含两个Consuer，Consumer1消费0 1 2 3，而Consumer2消费4 5 6 7。但实际情况是，Consumer2是没有消息可消费的。
@@ -551,7 +555,7 @@ $\textcolor{RoyalBlue}{(这应该是一个Broker的目录，一个!!!)}$
 
 #### 目录与文件
 
-commitlog目录中存放着很多的mappedFile文件，当前Broker中的所有消息都是落盘到这些mappedFile文件中的。mappedFile文件大小为1G（小于等于1G），文件名由**20位十进制数**构成，表示当前文件的第一条消息的起始位移偏移量。
+**commitlog目录中存放着很多的mappedFile文件**，当前Broker中的所有消息都是落盘到这些mappedFile文件中的。mappedFile文件大小为1G（小于等于1G），文件名由**20位十进制数**构成，表示当前文件的第一条消息的起始位移偏移量。
 
 > 第一个文件名一定是20位0构成的。因为第一个文件的第一条消息的偏移量commitlog offset为0
 > 当第一个文件放满时，则会自动生成第二个文件继续存放消息。
@@ -568,7 +572,7 @@ commitlog目录中存放着很多的mappedFile文件，当前Broker中的所有�
 
 <img src="RocketMQ简单笔记.assets\image-20220407002819965.png" alt="image-20220406214626834" style="zoom: 80%;" />
 
-mappedFile文件内容由一个个的消息单元构成。每个消息单元中包含消息总长度MsgLen、消息的物理位置physicalOffset、消息体内容Body、消息体长度BodyLength、消息主题Topic、Topic长度TopicLength、消息生产者BornHost、消息发送时间戳BornTimestamp、消息所在的队列QueueId、消息在Queue中存储的偏移量QueueOffset等近20余项消息相关属性。
+mappedFile文件内容由一个个的消息单元构成。每个消息单元中包含消息总长度MsgLen、消息的物理位置physicalOffset、消息体内容Body、消息体长度BodyLength、消息主题Topic、Topic长度TopicLength、消息生产者BornHost、消息发送时间戳BornTimestamp、消息所在的队列QueueId、消息在Queue中存储的偏移量QueueOffset等近20余项消息相关属性。[后面有说具体属性](#properties2)<a name=properties1> </a>
 
 > 一个mappedFile文件中第m+1个消息单元的commitlog offset偏移量
 >
@@ -1616,9 +1620,9 @@ msg.setDelayTimeLevel(3);
 >    ```
 >
 > 8. TM会根据上报结果向TC发出不同的确认指令
->   若预扣款成功（本地事务状态为COMMIT_MESSAGE），则TM向TC发送Global Commit指令
->   若预扣款失败（本地事务状态为ROLLBACK_MESSAGE），则TM向TC发送Global Rollback指令
->   若现未知状态（本地事务状态为UNKNOW），则会触发工行系统的本地事务状态`回查操作`。回查操作会将回查结果，即COMMIT_MESSAGE或ROLLBACK_MESSAGE Report给TC。TC将结果上报给TM，TM会再向TC发送最终确认指令Global Commit或Global Rollback
+>     若预扣款成功（本地事务状态为COMMIT_MESSAGE），则TM向TC发送Global Commit指令
+>     若预扣款失败（本地事务状态为ROLLBACK_MESSAGE），则TM向TC发送Global Rollback指令
+>     若现未知状态（本地事务状态为UNKNOW），则会触发工行系统的本地事务状态`回查操作`。回查操作会将回查结果，即COMMIT_MESSAGE或ROLLBACK_MESSAGE Report给TC。TC将结果上报给TM，TM会再向TC发送最终确认指令Global Commit或Global Rollback
 >
 > 9. TC在接收到指令后会向Broker与工行系统发出确认指令
 >
@@ -1754,14 +1758,263 @@ new ArrayBlockingQueue<Runnable>(2000), new ThreadFactory() {
 });
 ```
 
-
+（前面四种消息按类型划分，后面五种按操作划分）
 
 ## 五、批量消息
 
+### 1.批量发送消息
+
+#### 发送限制
+
+生产者进行消息发送时可以一次发送多条消息，这可以大大提升Producer的发送效率。不过需要注意以下几点：
+
+- 批量发送的消息必须具有相同的Topic
+- 批量发送的消息必须具有相同的刷盘策略
+- 批量发送的消息不能是延时消息与事务消息
+
+#### 批量发送大小
+
+默认情况下，一批发送的消息总大小不能超过4MB字节。如果想超出该值，有两种解决方案：
+
+- 方案一：将批量消息进行拆分，拆分为若干不大于4M的消息集合分多次批量发送
+
+- 方案二：在Producer端与Broker端修改属性
+
+  ​	（Producer端需要在发送之前设置Producer的maxMessageSize属性）
+
+  ​	（Broker端需要修改其加载的配置文件中的maxMessageSize属性）
+
+#### 生产者发送的消息大小
+
+<img src="RocketMQ简单笔记.assets/image-20220415110507032.png" alt="image-20220415110507032" style="zoom:50%;" />
+
+生产者通过send()方法发送的Message，并不是直接将Message序列化后发送到网络上的，而是通过**这个Message生成了一个字符串发送出去**的。这个字符串由四部分构成：Topic、消息Body、消息日志（占20字节），及用于描述消息的一堆属性key-value。这些属性中包含例如生产者地址、生产时间、要发送的QueueId等。最终写入到Broker中消息单元中的数据都是来自于这些属性。[前面有图](#properties1)<a name=properties2> </a>
+
+### 2.批量消费消息
+
+#### 修改批量属性
+
+<img src="RocketMQ简单笔记.assets/image-20220415141620986.png" alt="image-20220415141620986" style="zoom:50%;" />
+
+Consumer的MessageListenerConcurrently监听接口的consumeMessage()方法的第一个参数为消息列表，但默认情况下每次只能消费一条消息。若要使其一次可以消费多条消息，则可以通过修改Consumer的**consumeMessageBatchMaxSize**属性来指定。不过，该值不能超过32。因为默认情况下消费者每次可以拉取的消息最多是32条。若要修改一次拉取的最大值，则可通过修改Consumer的**pullBatchSize**属性来指定。
+
+#### 存在的问题
+
+Consumer的pullBatchSize属性与consumeMessageBatchMaxSize属性是否设置的越大越好？
+
+当然不是。
+
+- pullBatchSize值设置的越大，Consumer每拉取一次需要的时间就会越长，且在网络上传输出现问题的可能性就越高。若在拉取过程中若出现了问题，那么本批次所有消息都需要全部重新拉取。
+- consumeMessageBatchMaxSize值设置的越大，Consumer的消息并发消费能力越低，且这批被消费的消息具有相同的消费结果。因为consumeMessageBatchMaxSize指定的一批消息只会使用一个线程进行处理，且在处理过程中只要有一个消息处理异常，则这批消息需要全部重新再次消费处理。
+
+### 3.代码举例
+
+该批量发送的需求是，不修改最大发送4M的默认值，但要防止发送的批量消息超出4M的限制。
+
+大概就只要关注：若存在某条消息，其本身大小大于4M，这个分割器无法处理
+
 ## 六、消息过滤
+
+消息者在进行消息订阅时，除了可以指定要订阅消息的Topic外，还可以对指定Topic中的消息根据指定条件进行过滤，即可以订阅比Topic更加细粒度的消息类型。
+
+对于指定Topic消息的过滤有两种过滤方式：`Tag过滤`与`SQL过滤`。$\textcolor{RoyalBlue}{(好像用的不多)}$
+
+### 1.Tag过滤
+
+通过consumer的subscribe()方法指定要订阅消息的Tag。如果订阅多个Tag的消息，Tag间使用或运算符(双竖线||)连接。
+
+```java
+DefaultMQPushConsumer consumer = new
+DefaultMQPushConsumer("CID_EXAMPLE");
+consumer.subscribe("TOPIC", "TAGA || TAGB || TAGC");
+```
+
+### 2.SQL过滤
+
+SQL过滤是一种通过特定表达式对事先埋入到消息中的用户属性进行筛选过滤的方式。通过SQL过滤，可以实现对消息的复杂过滤。不过，只有使用`PUSH模式`的消费者才能使用SQL过滤。
+
+SQL过滤表达式中支持多种常量类型与运算符。
+
+支持的常量类型：
+
+- 数值：比如：123，3.1415
+- 字符：必须用单引号包裹起来，比如：'abc'
+- 布尔：TRUE 或 FALSE
+- NULL：特殊的常量，表示空
+
+支持的运算符有：
+
+- 数值比较：>，>=，<，<=，BETWEEN，=
+- 字符比较：=，<>，IN
+- 逻辑运算 ：AND，OR，NOT
+- NULL判断：IS NULL 或者 IS NOT NULL
+
+默认情况下Broker没有开启消息的SQL过滤功能，需要在Broker加载的配置文件中添加如下属性，以开启该功能：
+
+> enablePropertyFilter  = true $\textcolor{RoyalBlue}{(目测是用不到了，用到了再来看)}$
+
+### 3.代码
+
+简单讲了下如何用Tag和SQL做过滤。
 
 ## 七、消息发送重试机制
 
+$\textcolor{RoyalBlue}{(这章简单了解下思想就行)}$
+
+### 1.说明
+
+Producer对发送失败的消息进行重新发送的机制，称为消息发送重试机制，也称为消息重投机制。
+
+对于消息重投，需要注意以下几点：
+
+- 生产者在发送消息时，若采用**同步或异步发送方式**，发送失败会重试，但oneway消息发送方式发送失败是没有重试机制的
+- 只有普通消息具有发送重试机制，`顺序消息`是没有的
+- 消息重投机制可以保证消息尽可能发送成功、不丢失，但可能会造成消息重复。消息重复在RocketMQ中是无法避免的问题
+- 消息重复在一般情况下不会发生，当出现消息量大、网络抖动，消息重复就会成为大概率事件producer主动重发、consumer负载变化（发生Rebalance，不会导致消息重复，但可能出现重复消费）也会导致重复消息
+- 消息重复无法避免，但要避免消息的重复消费。
+- 避免消息重复消费的解决方案是，为消息添加唯一标识（例如消息key），使消费者对消息进行消费判断来避免重复消费
+- 消息发送重试有三种策略可以选择：同步发送失败策略、异步发送失败策略、消息刷盘失败策略
+
+### 2.同步发送失败策略
+
+对于普通消息，消息发送默认采用round-robin策略来选择所发送到的队列。如果发送失败，默认重试2次。但在重试时是不会选择上次发送失败的Broker，**而是选择其它Broker**。当然，若只有一个Broker其也只能发送到该Broker，但其会尽量发送到该Broker上的其它Queue。
+
+```java
+// 创建一个producer，参数为Producer Group名称
+DefaultMQProducer producer = new DefaultMQProducer("pg");
+// 指定nameServer地址
+producer.setNamesrvAddr("rocketmqOS:9876");
+// 设置同步发送失败时重试发送的次数，默认为2次
+producer.setRetryTimesWhenSendFailed(3);
+// 设置发送超时时限为5s，默认3s
+producer.setSendMsgTimeout(5000);
+```
+
+同时，Broker还具有`失败隔离`功能，使Producer尽量选择未发生过发送失败的Broker作为目标Broker。其可以保证其它消息尽量不发送到问题Broker，为了提升消息发送效率，降低消息发送耗时。
+
+> 思考：让我们自己实现`失败隔离`功能，如何来做？
+>
+> 1）方案一：Producer中维护某JUC的Map集合，其key是发生失败的时间戳，value为Broker实例。Producer中还维护着一个Set集合，其中存放着所有未发生发送异常的Broker实例。选择目标Broker是从该Set集合中选择的。再定义一个定时任务，定期从Map集合中将长期未发生发送异常的Broker清理出去，并添加到Set集合。
+> 2）方案二：为Producer中的Broker实例添加一个标识，例如是一个AtomicBoolean属性。只要该Broker上发生过发送异常，就将其置为true。选择目标Broker就是选择该属性值为false的Broker。再定义一个定时任务，定期将Broker的该属性置为false。
+> 3）方案三：为Producer中的Broker实例添加一个标识，例如是一个AtomicLong属性。只要该Broker上发生过发送异常，就使其值增一。选择目标Broker就是选择该属性值最小的Broker。若该值相同，采用轮询方式选择。
+
+如果超过重试次数，则抛出异常，由Producer去保证消息不丢。（其实这时候已经丢了，需要Producer再额外想办法）。当然当生产者出现RemotingException、MQClientException和MQBrokerException时，Producer会自动重投消息。
+
+### 3.异步发送失败策略
+
+异步发送失败重试时，异步重试不会选择其他broker，仅在同一个broker上做重试，所以该策略无法保证消息不丢。
+
+```java
+DefaultMQProducer producer = new DefaultMQProducer("pg");
+producer.setNamesrvAddr("rocketmqOS:9876");
+// 指定异步发送失败后不进行重试发送
+producer.setRetryTimesWhenSendAsyncFailed(0);
+```
+
+### 4.消息刷盘失败策略
+
+消息刷盘超时（Master或Slave）或slave不可用（slave在做数据同步时向master返回状态不是SEND_OK）时，默认是不会将消息尝试发送到其他Broker的。不过，对于重要消息可以通过在Broker的配置文件设置retryAnotherBrokerWhenNotStoreOK属性为true来开启。
+
 ## 八、消息消费重试机制
 
+### 1.顺序消息的消费重试
+
+对于顺序消息，当Consumer消费消息失败后，为了保证消息的顺序性，其会自动不断地进行消息重试，直到消费成功。消费重试默认间隔时间为1000毫秒。重试期间应用会出现消息消费被阻塞的情况。
+
+```java
+DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("cg");
+// 顺序消息消费失败的消费重试时间间隔，单位毫秒，默认为1000，其取值范围为[10,30000]
+consumer.setSuspendCurrentQueueTimeMillis(100);
+```
+
+> 由于**对顺序消息的重试是无休止的，不间断的，直至消费成功**，所以，对于顺序消息的消费，务必要保证应用能够及时监控并处理消费失败的情况，避免消费被永久性阻塞。
+>
+> **注意**，顺序消息没有**发送失败重试机制**，但具有**消费失败重试机制**
+
+### 2.无序消息的消费重试
+
+对于无序消息（普通消息、延时消息、事务消息），当Consumer消费消息失败时，可以通过设置返回状态达到消息重试的效果。不过需要注意，无序消息的重试**只对集群消费方式生效**，广播消费方式不提供失败重试特性。即对于广播消费，消费失败后，失败消息不再重试，继续消费后续消息。$\textcolor{RoyalBlue}{(广播消费是一起发出去，谁先消费完用谁的结果)}$
+
+### 3.消费重试次数与间隔
+
+对于无序消息集群消费下的重试消费，每条消息默认最多重试16次，但每次重试的间隔时间是不同的，会逐渐变长。每次重试的间隔时间如下表。
+
+| 重试次数 | 与上次重试的间隔时间 | 重试次数 | 与上次重试的间隔时间 |
+| :------: | :------------------: | :------: | :------------------: |
+|    1     |         10秒         |    9     |        7分钟         |
+|    2     |         30秒         |    10    |        8分钟         |
+|    3     |        1分钟         |    11    |        9分钟         |
+|    4     |        2分钟         |    12    |        10分钟        |
+|    5     |        3分钟         |    13    |        20分钟        |
+|    6     |        4分钟         |    14    |        30分钟        |
+|    7     |        5分钟         |    15    |        1小时         |
+|    8     |        6分钟         |    16    |        2小时         |
+
+> 若一条消息在一直消费失败的前提下，将会在正常消费后的**第4小时46分**后进行第16次重试。若仍然失败，则将消息投递到**死信队列**
+>
+> 修改消费重试次数
+>
+> ```java
+> DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("cg");
+> // 修改消费重试次数
+> consumer.setMaxReconsumeTimes(10);
+> ```
+>
+> 对于修改过的重试次数，将按照以下策略执行：
+>
+> - 若修改值小于16，则按照指定间隔进行重试
+> - 若修改值大于16，则超过16次的重试时间间隔均为2小时
+>
+> 对于Consumer Group，若**仅修改了一个Consumer的消费重试次数，则会应用到该Group中所有其它Consumer实例**。若出现多个Consumer均做了修改的情况，则采用覆盖方式生效。即最后被修改的值会覆盖前面设置的值。
+
+### 4.重试队列
+
+对于需要重试消费的消息，并不是Consumer在等待了指定时长后再次去拉取原来的消息进行消费，而是将这些需要重试消费的消息放入到了一个特殊Topic的队列中，而后进行再次消费的。这个特殊的队列就是重试队列。
+
+当出现需要进行重试消费的消息时，Broker会为每个消费组都设置一个Topic名称为**%RETRY%consumerGroup@consumerGroup** 的重试队列。
+
+> 1）这个重试队列是**针对消息组**的，而不是针对每个Topic设置的（一个Topic的消息可以让多个消费者组进行消费，所以会为这些消费者组各创建一个重试队列）
+> 2）只有当出现需要进行重试消费的消息时，才会为该消费者组创建重试队列
+>
+> <img src="RocketMQ简单笔记.assets/image-20220416002558372.png" alt="image-20220416002558372" style="zoom:50%;" />
+>
+> 注意，消费重试的时间间隔与`延时消费`的`延时等级`十分相似，除了没有延时等级的前两个时间外，其它的时间都是相同的
+
+Broker对于重试消息的处理是通过`延时消息`实现的。先将消息保存到SCHEDULE_TOPIC_XXXX延迟队列中，延迟时间到后，会将消息投递到%RETRY%consumerGroup@consumerGroup重试队列中。
+
+### 5.消费重试配置方式
+
+<img src="RocketMQ简单笔记.assets/image-20220416002727143.png" alt="image-20220416002727143" style="zoom:50%;" />
+
+集群消费方式下，消息消费失败后若希望消费重试，则需要在消息监听器接口的实现中明确进行如下三种方式之一的配置：
+
+- 方式1：返回ConsumeConcurrentlyStatus.RECONSUME_LATER（推荐）
+- 方式2：返回Null
+- 方式3：抛出异常
+
+### 6.消费不重试配置方式
+
+<img src="RocketMQ简单笔记.assets/image-20220416002910313.png" alt="image-20220416002910313" style="zoom:50%;" />
+
+集群消费方式下，消息消费失败后若不希望消费重试，则在捕获到异常后同样也返回与消费成功后的相同的结果，即ConsumeConcurrentlyStatus.CONSUME_SUCCESS，则不进行消费重试。
+
 ## 九、死信队列
+
+### 1.什么是死信队列
+
+当一条消息初次消费失败，消息队列会自动进行消费重试；达到最大重试次数后，若消费依然失败，则表明消费者在正常情况下无法正确地消费该消息，此时，消息队列不会立刻将消息丢弃，而是将其发送到该消费者对应的特殊队列中。这个队列就是死信队列（Dead-Letter Queue，DLQ），而其中的消息则称为死信消息（Dead-Letter Message，DLM）。
+
+> 死信队列是用于处理无法被正常消费的消息的。
+
+### 2.死信队列的特征
+
+死信队列具有如下特征：
+
+- 死信队列中的消息不会再被消费者正常消费，即DLQ对于消费者是不可见的
+- 死信存储有效期与正常消息相同，均为 3 天（commitlog文件的过期时间），3 天后会被自动删除
+- 死信队列就是一个特殊的Topic，名称为**%DLQ%consumerGroup@consumerGroup** ，即每个消费者组都有一个死信队列
+- 如果⼀个消费者组未产生死信消息，则不会为其创建相应的死信队列
+
+### 3.死信消息的处理
+
+实际上，当⼀条消息进入死信队列，就意味着系统中某些地方出现了问题，从而导致消费者无法正常消费该消息，比如代码中原本就存在Bug。因此，对于死信消息，通常需要开发人员进行特殊处理。最关键的步骤是要排查可疑因素，解决代码中可能存在的Bug，然后再将原来的死信消息再次进行投递消费。
