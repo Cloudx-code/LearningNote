@@ -154,7 +154,37 @@
 1. 评论系统设计中结合消息队列如何做存储优化
 2. 评论系统设计中缓存、存储设计的方案
 
-
+> **1.关于闭包的一个问题**
+>
+> <img src="golang进阶.assets/image-20220611233747237.png" alt="image-20220611233747237" style="zoom:50%;" />
+>
+> **2.Sql的代码BUG**
+>
+> 如果返回nil的话，可能会出现在for循环时，Mysql突然挂掉这种情况，导致此时只读取了一部分数据
+>
+> <img src="golang进阶.assets/image-20220612005255562.png" alt="image-20220612005255562" style="zoom:50%;" />
+>
+> 
+>
+> **3.笔记：**
+>
+> Redis不要一次查询大量数据（1000条+），一页100-200还是没问题的
+>
+> 
+>
+> 如果先Exist后再Zadd，那么可能Zadd的时候就过期了，从而出现只有一条数据的情况，因此可以先Expire续个时间，然后再Zadd
+>
+> <img src="golang进阶.assets/image-20220612145257807.png" alt="image-20220612145257807" style="zoom:50%;" />
+>
+> 
+>
+> Redis清Key，内存快满时（70%~80%）get、put时，随机找1000个，谁快过期了清谁。
+>
+> **4.推荐阅读**
+>
+> Scaling Memcache At Facebook 论文
+>
+> bilibili/overload
 
 ### 模块七：播放历史架构设计
 

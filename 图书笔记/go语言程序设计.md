@@ -209,3 +209,67 @@ o := 0666
 fmt.Printf("%d %[1]o %#[1]o\n",o)	//438 666 0666
 ```
 
+### 4.字符串
+
+#### utf8
+
+P51
+
+> Unicode和UTF-8
+>
+> 按照UTF-8：
+>
+> utf8.RuneCountInString()：计算字节数（以utf-8的格式，而不是一个个字节来算）
+>
+> utf8.DecodeRuneInString()：返回r（文字符号本身）和一个值（按utf8编码所占字节数，这个值可以用来定位下一个文字符号）
+>
+> UTF-8解码器出错时会产生一个专门的字符‘\uFFFD’
+
+#### 4个标准包：bytes,strings,strconv,unicode
+
+> bytes.Buffer类型好像挺重要的
+
+#### path/filepath(不太重要的包)
+
+P54
+
+> 用来操作文件路径等**具有层次结构**的名字
+>
+> path处理以‘/’分段的路径字符串，不分平台，如URL地址的路径部分
+>
+> path/filepath根据平台的规则处理文件名
+
+#### 字符串和数字的相互转换
+
+P56
+
+> 整数 -->字符串 ：fmt.Sprintf或者strconv.Itoa()
+>
+> strconv.FormatInt()可以按不同进位制格式化数字
+>
+> 字符串 --> 整数 ：strconv.Atoi或者strconv.ParseInt()
+
+### 常量
+
+> 常类生成器iota:从0开始取值，逐项加1
+
+```go
+type Weekday int
+const(
+	Sunday Weekday = iota	//0
+	Monday					//1
+	Tuesday					//2
+)
+
+type Flags uint
+const(
+	FlagUp Flags = 1<<iota	// xxxxx001
+	FlagBroadcast			// xxxxx010
+	FlagLoopback			// xxxxx100
+)
+```
+
+> 无类型常类：编译器从属类型待定的常类表示成某些值，这些值比基本类型精度更高，可以认为精度达到256位
+>
+> 只有常量才可以是无类型的
+
