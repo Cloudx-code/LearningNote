@@ -131,6 +131,22 @@
 
 
 
+> **1. 微服务需要关注：**
+>
+> **可用性**和**数据一致性**
+>
+> **2. 推荐：**
+>
+> 书籍：《代码整洁之道》 
+>
+> 知乎：Joshua(DDD)
+>
+> **3. 在Go中，只要控制Goroutine的总量，服务就不会oom（线程不会炸）**
+>
+> <img src="D:\GoProject\LearningNote\golang进阶\golang进阶.assets\image-20220617205730646.png" alt="image-20220617205730646" style="zoom:50%;" /><img src="D:\GoProject\LearningNote\golang进阶\golang进阶.assets\image-20220617205903724.png" alt="image-20220617205903724" style="zoom:50%;" />
+
+
+
 ### 模块六：评论系统架构设计
 
 教学目标：
