@@ -611,6 +611,8 @@ type ReadWriter interface{
 
 1.接口：动态类型和值
 
+> 用**类型描述符**来提供每个类型的具体信息。比如名字和方法
+
 2.一个接口值是否为nil取决于它的动态类型
 
 3.一般来讲，在编译时无法知道一个接口值的动态类型会是什么，所以通过接口来做调用必然需要使用**动态分发**
@@ -1148,3 +1150,108 @@ todo
 ## 第10章 包和go工具
 
 ## 第11章 测试
+
+## 第12章 反射
+
+### 12.1 为什么使用反射
+
+### 12.2 reflect.Type和reflect.Value
+
+1.回顾：接口值包含：动态类型和动态值两个部分，分别代表类型和值
+
+> reflect定义了两个重要的类型：Type和Value
+
+2.reflect.TypeOf接收任何interface()，并返回接口中的动态类型以reflect.Type返回
+
+> 因为reflect.TypeOf返回一个接口值对于的动态类型，所有它返回的总是具体类型（而不是接口类型）
+>
+> fmt.Printf中的%T内部实现就使用了reflect.TypeOf
+
+3.reflect.ValueOf接收任何interface()，并返回接口中的动态值以reflect.Type返回
+
+> 与reflect.TypeOf类似reflect.ValueOf的返回值也都是具体值，不过reflect.Value可以包含一个接口值
+>
+> ```go
+> v := reflect.ValueOf(3) 	// 一个 reflect.Value
+> fmt.Println(v)				// "3"
+> fmt.Printf("%v\n",v)		// "3"
+> fmt.Println(v.String())		// 注意：“<int Value>”
+> ```
+
+4.reflect.Value.Interface是reflect.ValueOf的逆操作
+
+5.reflect.Value和interface的区别
+
+> **空接口（interface{}）**隐藏了值的布局信息、内置操作和相关方法
+>
+> 在不知道动态类型时，能做的事情很少
+>
+> **reflect.Value**有很多方法分析所包含的值，而不用知道它的类型
+>
+> 可以用reflect.Value的kind方法来区分不同的类型
+
+### 12.3 Display：一个递归的值显示器
+
+### 12.4 示例：编码S表达式
+
+### 12.5 使用reflect.Value来设置值
+
+1.一个变量是一个可寻址的存储区域
+
+> reflect.ValueOf(x)返回的reflect.Value都是不可寻址的
+
+2.可以通过调用reflect.ValueOf(&x).Elem()来获得任意变量x可寻址的Value值
+
+> reflect.ValueOf(x)返回的reflect.Value都是不可寻址的
+
+3.从一个可寻址的reflect.Value()获取变量需要三步
+
+> 1）调用Addr()，返回一个Value，其中包含一个指向变量的指针
+>
+> 2）在这个Value上调用Interface()，返回一个包含这个指针的interface{}值
+>
+> 3）使用类型断言把接口内容转为一个普通指针，通过这个指针更新变量
+>
+> ```go
+> x := 2					
+> d := reflect.ValueOf(&x).Elem()		//d代表变量x
+> px := d.Addr().Interface().(*int)	//px := &x
+> *px = 3								//x = 3
+> fmt.Println(x)						//"3"
+> ```
+
+4.一个可寻址的reflect.Value会记录它是否是通过一个未导出字段来获得的，如果是，则不允许修改
+
+### 12.6 示例：解码S表达式
+
+### 12.7 访问结构体字段标签
+
+### 12.8 显示类型的方法
+
+### 12.9 注意事项
+
+## 第13章 低级编程
+
+#### 13.1 unsafe.Sizeof、Alignof和Offsetof
+
+1.unsafe.Sizeof内存中占用的字节长度
+
+> 存在内存空位，如果结构体成员的类型不同，那么将相同类型的成员定义在一起可以更节约内存空间
+
+2.unsafe.Alignof报告它参数类型要求的对齐方式
+
+3.unsafe.Offsetof计算结构体成员相对于结构体起始位置的偏移值
+
+#### 13.2 unsafe.Pointer
+
+1.存储任何变量的地址
+
+2.很多unsafe.Pointer类型的值都是从普通指针到原始内存地址以及再从内存地址到普通指针进行转换的中间值
+
+> 会出现一些很微妙的错误，具体的只能看书中案例
+
+#### 13.3 示例：深度相等
+
+#### 13.4 使用cgo调用C代码
+
+#### 13.5 关于安全的注意事项
